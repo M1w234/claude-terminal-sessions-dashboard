@@ -32,7 +32,10 @@ CMUX_MAP_FILE = CLAUDE_DIR / "cmux-session-map.json"
 SUMMARIES_FILE = CLAUDE_DIR / "session-summaries.json"
 SKILLS_DIR = CLAUDE_DIR / "skills"
 COMMANDS_DIR = CLAUDE_DIR / "commands"
+HOOKS_DIR = CLAUDE_DIR / "hooks"
+PLUGINS_DIR = CLAUDE_DIR / "plugins" / "marketplaces"
 REGISTRY_FILE = Path(__file__).parent / "registry.json"
+STATIC_FILE = Path(__file__).parent / "registry-static.json"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -677,6 +680,93 @@ def build_catalog():
                 "related": enrich.get("related", []),
                 "source": "custom",
             })
+
+    # Scan hooks
+    if HOOKS_DIR.exists():
+        for hook_file in sorted(HOOKS_DIR.glob("*.sh")):
+            hook_id = f"hook-{hook_file.stem}"
+            enrich = enrichments.get(hook_id, {})
+            # Read first comment line for description
+            desc = ""
+            try:
+                with open(hook_file) as f:
+                    for line in f:
+                        if line.startswith("# ") and not line.startswith("#!"):
+                            desc = line[2:].strip()
+                            break
+            except IOError:
+                pass
+
+            catalog.append({
+                "id": hook_id,
+                "name": hook_file.stem.replace("-", " ").replace("_", " ").title(),
+                "command": "(automatic)",
+                "description": desc or f"Hook script: {hook_file.name}",
+                "type": "hook",
+                "category": enrich.get("category", "hooks"),
+                "subcategory": enrich.get("subcategory"),
+                "useCases": enrich.get("useCases", []),
+                "tags": enrich.get("tags", ["hook", "automation"]),
+                "related": enrich.get("related", []),
+                "source": "custom",
+            })
+
+    # Scan installed plugins
+    if PLUGINS_DIR.exists():
+        for marketplace_dir in PLUGINS_DIR.iterdir():
+            plugins_root = marketplace_dir / "plugins"
+            if not plugins_root.exists():
+                continue
+            for plugin_dir in sorted(plugins_root.iterdir()):
+                if not plugin_dir.is_dir():
+                    continue
+                plugin_id = f"plugin-{plugin_dir.name}"
+                enrich = enrichments.get(plugin_id, {})
+                # Try to read README or plugin.json for description
+                desc = ""
+                readme = plugin_dir / "README.md"
+                if readme.exists():
+                    try:
+                        with open(readme) as f:
+                            lines = f.readlines()
+                        # Use first non-heading, non-empty line
+                        for line in lines:
+                            line = line.strip()
+                            if line and not line.startswith("#"):
+                                desc = line[:200]
+                                break
+                    except IOError:
+                        pass
+
+                catalog.append({
+                    "id": plugin_id,
+                    "name": plugin_dir.name.replace("-", " ").title(),
+                    "command": f"(plugin)",
+                    "description": desc or f"Installed plugin: {plugin_dir.name}",
+                    "type": "plugin",
+                    "category": enrich.get("category", "plugins"),
+                    "subcategory": enrich.get("subcategory"),
+                    "useCases": enrich.get("useCases", []),
+                    "tags": enrich.get("tags", ["plugin"]),
+                    "related": enrich.get("related", []),
+                    "source": "plugin",
+                })
+
+    # Load user-configured static entries (MCP integrations, etc.)
+    if STATIC_FILE.exists():
+        try:
+            with open(STATIC_FILE) as f:
+                static_entries = json.load(f)
+            for entry in static_entries:
+                entry_id = entry.get("id", "")
+                enrich = enrichments.get(entry_id, {})
+                # Merge enrichments into static entry
+                for key in ("useCases", "tags", "related", "category", "subcategory"):
+                    if key in enrich and key not in entry:
+                        entry[key] = enrich[key]
+                catalog.append(entry)
+        except (IOError, json.JSONDecodeError):
+            pass
 
     return catalog
 

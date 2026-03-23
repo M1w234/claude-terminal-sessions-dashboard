@@ -1,0 +1,74 @@
+[
+  {
+    "id": "cli-continue",
+    "name": "Resume Session",
+    "command": "claude --continue",
+    "type": "cli",
+    "category": "cli",
+    "description": "Resume the most recent session in the current directory. Automatically picks the last-active session.",
+    "useCases": ["resume where I left off", "continue my last session", "go back to what I was working on"],
+    "tags": ["session", "resume", "continue"],
+    "related": ["cli-resume", "cli-fork"],
+    "source": "builtin"
+  },
+  {
+    "id": "cli-resume",
+    "name": "Resume Specific Session",
+    "command": "claude --resume <id>",
+    "type": "cli",
+    "category": "cli",
+    "description": "Resume a specific session by its ID. Get IDs from claude-sessions --verbose.",
+    "useCases": ["resume a specific session", "go back to a particular conversation"],
+    "tags": ["session", "resume", "specific", "id"],
+    "related": ["cli-continue", "cli-sessions", "cli-fork"],
+    "source": "builtin"
+  },
+  {
+    "id": "cli-fork",
+    "name": "Fork Session",
+    "command": "claude --continue --fork-session",
+    "type": "cli",
+    "category": "cli",
+    "description": "Fork a session \u2014 creates a new session with full conversation history, but the original stays untouched. Great for branching experiments.",
+    "useCases": ["fork a session to a new tab", "branch off from a conversation", "duplicate a session", "experiment without losing original"],
+    "tags": ["session", "fork", "branch", "duplicate", "experiment"],
+    "related": ["cli-continue", "cli-resume"],
+    "source": "builtin"
+  },
+  {
+    "id": "cli-sessions",
+    "name": "List Sessions",
+    "command": "claude-sessions --verbose",
+    "type": "cli",
+    "category": "cli",
+    "description": "List all sessions with their IDs. Use to grab session IDs for --resume or --fork-session.",
+    "useCases": ["find a session ID", "list my sessions", "see all past conversations"],
+    "tags": ["session", "list", "history", "ids"],
+    "related": ["cli-resume", "cli-fork"],
+    "source": "builtin"
+  },
+  {
+    "id": "cli-print",
+    "name": "Print Mode",
+    "command": "claude -p \"prompt\"",
+    "type": "cli",
+    "category": "cli",
+    "description": "Non-interactive mode \u2014 sends prompt, prints response, and exits. Great for scripting and automation.",
+    "useCases": ["run a one-off prompt", "script Claude into a pipeline", "get a quick answer without a session"],
+    "tags": ["print", "scripting", "automation", "non-interactive", "pipe"],
+    "related": [],
+    "source": "builtin"
+  },
+  {
+    "id": "cli-model",
+    "name": "Override Model",
+    "command": "claude --model <model>",
+    "type": "cli",
+    "category": "cli",
+    "description": "Override the default model for a session. Use model IDs like claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5.",
+    "useCases": ["use a different model", "switch to Haiku for speed", "use Opus for complex tasks"],
+    "tags": ["model", "override", "haiku", "sonnet", "opus"],
+    "related": [],
+    "source": "builtin"
+  }
+]
