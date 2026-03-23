@@ -1078,7 +1078,8 @@ function formatDate(dateStr) {
 
 function shortProject(p) {
   if (!p) return '';
-  const home = '/Users/michaelwong';
+  const homeMatch = p.match(/^(\/Users\/[^/]+)/);
+  if (homeMatch) return '~' + p.slice(homeMatch[1].length);
   if (p.startsWith(home)) return '~' + p.slice(home.length);
   return p;
 }
