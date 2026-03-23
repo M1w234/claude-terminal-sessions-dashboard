@@ -213,8 +213,10 @@ def clean_text(text):
         if '<command-name>' in text:
             return ""
 
-    # Strip ALL tags
-    result = re.sub(r'<[^>]+>', '', text).strip()
+    # Strip ALL tags (including partial/broken tags from truncation)
+    result = re.sub(r'<[^>]*>', '', text).strip()
+    result = re.sub(r'<[^>]*$', '', result).strip()  # trailing partial tag
+    result = re.sub(r'^[^<]*>', '', result).strip()   # leading partial close tag
 
     # Remove leading slash commands
     result = re.sub(r'^/\w+\s*', '', result).strip()

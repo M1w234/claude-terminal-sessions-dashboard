@@ -70,6 +70,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Custom Scrollbars ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
 /* ── Top Bar ── */
 .topbar {
   display: flex;
@@ -105,8 +111,10 @@ body {
 
 .topbar-title {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 500;
+  letter-spacing: -0.02em;
+  font-optical-sizing: auto;
   color: var(--text);
 }
 
@@ -157,32 +165,35 @@ body {
 .search-prompt {
   font-family: 'Fraunces', Georgia, serif;
   font-style: italic;
-  font-size: 22px;
+  font-size: 20px;
   color: var(--text-dim);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   font-weight: 300;
+  letter-spacing: -0.02em;
+  font-optical-sizing: auto;
 }
 
 .search-bar {
   position: relative;
-  max-width: 600px;
+  max-width: 560px;
   margin: 0 auto;
 }
 
 .search-bar input {
   width: 100%;
-  padding: 14px 20px 14px 44px;
+  padding: 10px 14px 10px 38px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  border: 2px solid var(--border);
-  border-radius: var(--radius);
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   background: var(--bg-surface);
   color: var(--text);
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
 .search-bar input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 .search-bar input::placeholder {
   color: var(--text-faint);
@@ -227,20 +238,21 @@ body {
 }
 
 .pill {
-  padding: 6px 14px;
-  font-size: 13px;
+  padding: 3px 10px;
+  font-size: 11px;
   font-weight: 500;
   border: 1px solid var(--border);
-  border-radius: 20px;
-  background: var(--bg-surface);
-  color: var(--text-secondary);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
   user-select: none;
+  white-space: nowrap;
 }
 .pill:hover {
   background: var(--bg-hover);
-  border-color: var(--text-faint);
+  color: var(--text-secondary);
 }
 .pill.active {
   background: var(--accent);
@@ -248,9 +260,8 @@ body {
   border-color: var(--accent);
 }
 .pill .count {
-  font-size: 11px;
   opacity: 0.7;
-  margin-left: 4px;
+  margin-left: 2px;
 }
 
 /* ── Card Grid ── */
@@ -263,28 +274,22 @@ body {
 
 .card {
   background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  padding: 16px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 14px 16px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.12s ease;
   position: relative;
-  border-left: 3px solid var(--type-skill);
 }
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--border);
+  background: var(--bg-surface);
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-sm);
 }
 .card.focused {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
-.card[data-type="mcp"]     { border-left-color: var(--type-mcp); }
-.card[data-type="cli"]     { border-left-color: var(--type-cli); }
-.card[data-type="hook"]    { border-left-color: var(--type-hook); }
-.card[data-type="plugin"]  { border-left-color: var(--type-plugin); }
-.card[data-type="command"] { border-left-color: var(--type-command); }
 
 .card-header {
   display: flex;
@@ -294,17 +299,21 @@ body {
 }
 
 .card-icon {
-  font-size: 20px;
+  color: var(--text-dim);
   margin-right: 10px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .card-name {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
+  letter-spacing: -0.02em;
   color: var(--text);
   flex: 1;
+  line-height: 1.3;
 }
 
 .card-command {
@@ -338,53 +347,65 @@ body {
   flex: 1;
 }
 
+.card-tags-text {
+  font-size: 11px;
+  color: var(--text-faint);
+  flex: 1;
+}
+
 .tag {
   font-size: 11px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  background: var(--bg-hover);
   color: var(--text-dim);
 }
 
 .type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  color: #fff;
+  letter-spacing: 0.06em;
   flex-shrink: 0;
 }
-.type-badge[data-type="skill"]   { background: var(--type-skill); }
-.type-badge[data-type="mcp"]     { background: var(--type-mcp); }
-.type-badge[data-type="cli"]     { background: var(--type-cli); }
-.type-badge[data-type="hook"]    { background: var(--type-hook); }
-.type-badge[data-type="plugin"]  { background: var(--type-plugin); }
-.type-badge[data-type="command"] { background: var(--type-command); }
+.type-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.type-dot[data-type="skill"]   { background: var(--type-skill); box-shadow: 0 0 0 2px var(--accent-light); }
+.type-dot[data-type="mcp"]     { background: var(--type-mcp); box-shadow: 0 0 0 2px #d4eddb; }
+.type-dot[data-type="cli"]     { background: var(--type-cli); box-shadow: 0 0 0 2px #dde0f2; }
+.type-dot[data-type="hook"]    { background: var(--type-hook); box-shadow: 0 0 0 2px #f0e6c8; }
+.type-dot[data-type="plugin"]  { background: var(--type-plugin); box-shadow: 0 0 0 2px #e4dff0; }
+.type-dot[data-type="command"] { background: var(--type-command); box-shadow: 0 0 0 2px var(--accent-light); }
+[data-theme="dark"] .type-dot { box-shadow: 0 0 0 2px var(--bg-hover); }
 
 .copy-btn {
-  background: none;
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 4px 8px;
+  padding: 3px 8px;
   cursor: pointer;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'DM Sans', sans-serif;
   font-size: 11px;
+  font-weight: 500;
   color: var(--text-dim);
-  transition: all 0.15s;
+  transition: all 0.12s ease;
   flex-shrink: 0;
   margin-left: 8px;
+  letter-spacing: 0.01em;
 }
 .copy-btn:hover {
-  background: var(--accent-light);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--bg);
+  border-color: var(--text-dim);
+  color: var(--text-secondary);
 }
 .copy-btn.copied {
-  background: var(--green);
   border-color: var(--green);
-  color: #fff;
+  color: var(--green);
+  background: transparent;
 }
 
 /* ── Detail Panel ── */
@@ -441,17 +462,34 @@ body {
   color: var(--text);
 }
 
-.detail-type-bar {
-  height: 4px;
-  border-radius: 2px;
-  margin-bottom: 20px;
+.detail-type-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.detail-type-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.detail-type-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
 }
 
 .detail-name {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 500;
   margin-bottom: 6px;
+  letter-spacing: -0.02em;
 }
 
 .detail-command {
@@ -482,13 +520,12 @@ body {
 }
 
 .detail-section-title {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--text-dim);
   margin-bottom: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.06em;
 }
 
 .detail-use-cases {
@@ -549,50 +586,63 @@ body {
 
 .scenarios-title {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--text);
   margin-bottom: 16px;
   text-align: center;
+  letter-spacing: -0.02em;
 }
 
 .scenario-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 6px;
 }
 
 .scenario-card {
-  padding: 16px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  background: var(--bg-surface);
+  padding: 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
   cursor: pointer;
-  transition: all 0.15s;
-  text-align: center;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .scenario-card:hover {
-  background: var(--accent-faint);
-  border-color: var(--accent);
-  transform: translateY(-1px);
+  background: var(--bg-surface);
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-sm);
 }
 
 .scenario-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.scenario-text {
+  flex: 1;
 }
 
 .scenario-label {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .scenario-tools {
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-faint);
 }
 
 /* ── Empty state ── */
@@ -712,6 +762,7 @@ body {
   font-family: 'Fraunces', Georgia, serif;
   font-size: 16px;
   font-weight: 500;
+  letter-spacing: -0.02em;
 }
 .wb-close {
   background: none;
@@ -726,24 +777,26 @@ body {
 
 .wb-modes {
   display: flex;
-  gap: 4px;
-  padding: 12px 20px;
+  gap: 2px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
+  background: var(--bg);
+  border-radius: 0;
 }
 .wb-mode {
-  padding: 5px 12px;
+  padding: 6px 14px;
   font-size: 12px;
   font-weight: 500;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-surface);
-  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.12s ease;
 }
-.wb-mode:hover { background: var(--bg-hover); }
-.wb-mode.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.wb-mode:hover { color: var(--text-secondary); }
+.wb-mode.active { background: var(--bg-surface); color: var(--text); box-shadow: var(--shadow-sm); }
 
 .wb-refs {
   padding: 12px 20px;
@@ -809,26 +862,40 @@ body {
   gap: 12px;
 }
 .wb-msg {
-  max-width: 90%;
-  padding: 10px 14px;
+  padding: 14px 18px;
   border-radius: var(--radius);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 13.5px;
+  line-height: 1.65;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
+.wb-msg-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wb-msg-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
 .wb-msg.user {
-  align-self: flex-end;
-  background: var(--accent);
-  color: #fff;
-  border-bottom-right-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
 }
+.wb-msg.user .wb-msg-label { color: var(--text-secondary); }
+.wb-msg.user .wb-msg-dot { background: var(--text-dim); }
 .wb-msg.assistant {
-  align-self: flex-start;
-  background: var(--bg-hover);
-  color: var(--text);
-  border-bottom-left-radius: 4px;
+  background: var(--accent-faint);
+  border: 1px solid var(--accent-light);
 }
+.wb-msg.assistant .wb-msg-label { color: var(--accent); }
+.wb-msg.assistant .wb-msg-dot { background: var(--accent); }
 .wb-msg.assistant code {
   background: var(--bg-active);
   padding: 1px 4px;
@@ -906,17 +973,29 @@ body {
   max-height: 40vh;
   overflow-y: auto;
 }
-.wb-output-content {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  white-space: pre-wrap;
-  max-height: 200px;
-  overflow-y: auto;
+.wb-output-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wb-output-content {
+  background: var(--accent-faint);
+  border: 1px solid var(--accent-light);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  color: var(--text);
 }
 .wb-output-actions {
   display: flex;
@@ -1151,18 +1230,18 @@ const STATIC_ENTRIES = [
 
 // ── Scenarios ──
 const SCENARIOS = [
-  { icon:'\ud83d\udd0d', label:'Research a Company', query:'research a company', tools:['scout','linkedin-companies','web-crawl','competitor-intel'] },
-  { icon:'\ud83c\udfaf', label:'Generate Leads', query:'find leads', tools:['lead-gen','ig-search','contact-scrape','gmaps-scrape'] },
-  { icon:'\ud83d\udcca', label:'Analyze Competitors', query:'analyze competitors', tools:['competitor-intel','fb-ads','gmaps-reviews','google-serp'] },
-  { icon:'\ud83d\udcf1', label:'Audit Social Media', query:'analyze social media content', tools:['ig-posts','ig-reels','fb-posts','tiktok-scrape','yt-scrape'] },
-  { icon:'\ud83c\udfa8', label:'Create Content', query:'create visual content', tools:['frontend-design','canva','gamma','algorithmic-art','playground'] },
-  { icon:'\ud83d\udce7', label:'Find Contact Info', query:'find email and phone', tools:['contact-scrape','fb-pages','linkedin-profiles'] },
-  { icon:'\u2b50', label:'Analyze Reviews', query:'analyze customer reviews', tools:['gmaps-reviews','yelp-reviews'] },
-  { icon:'\ud83d\udcc8', label:'Check SEO', query:'check SEO rankings', tools:['google-serp','screaming-frog-cli','web-crawl'] },
-  { icon:'\ud83c\udfac', label:'Get Video Transcripts', query:'transcribe a video', tools:['ig-transcript','yt-transcript'] },
-  { icon:'\ud83d\udcc5', label:'Manage Schedule', query:'schedule meetings', tools:['calendly','outlook'] },
-  { icon:'\ud83d\udd04', label:'Resume a Session', query:'resume session', tools:['cli-continue','cli-resume','cli-fork','cli-sessions'] },
-  { icon:'\ud83d\udee0\ufe0f', label:'Configure Claude Code', query:'change settings', tools:['plugin-update-config','plugin-keybindings'] },
+  { label:'Research a Company', query:'research a company', tools:['scout','linkedin-companies','web-crawl','competitor-intel'] },
+  { label:'Generate Leads', query:'find leads', tools:['lead-gen','ig-search','contact-scrape','gmaps-scrape'] },
+  { label:'Analyze Competitors', query:'analyze competitors', tools:['competitor-intel','fb-ads','gmaps-reviews','google-serp'] },
+  { label:'Audit Social Media', query:'analyze social media content', tools:['ig-posts','ig-reels','fb-posts','tiktok-scrape','yt-scrape'] },
+  { label:'Create Content', query:'create visual content', tools:['frontend-design','canva','gamma','algorithmic-art','playground'] },
+  { label:'Find Contact Info', query:'find email and phone', tools:['contact-scrape','fb-pages','linkedin-profiles'] },
+  { label:'Analyze Reviews', query:'analyze customer reviews', tools:['gmaps-reviews','yelp-reviews'] },
+  { label:'Check SEO', query:'check SEO rankings', tools:['google-serp','screaming-frog-cli','web-crawl'] },
+  { label:'Get Video Transcripts', query:'transcribe a video', tools:['ig-transcript','yt-transcript'] },
+  { label:'Manage Schedule', query:'schedule meetings', tools:['calendly','outlook'] },
+  { label:'Resume a Session', query:'resume session', tools:['cli-continue','cli-resume','cli-fork','cli-sessions'] },
+  { label:'Configure Claude Code', query:'change settings', tools:['plugin-update-config','plugin-keybindings'] },
 ];
 
 // ── Synonyms ──
@@ -1441,16 +1520,17 @@ function renderCards(items) {
     const icon = getIcon(item);
     const tags = (item.tags || []).slice(0, 3);
 
+    const tagText = tags.map(t => escHtml(t)).join(' \u00b7 ');
     card.innerHTML = `
       <div class="card-header">
         <span class="card-icon">${icon}</span>
         <span class="card-name">${escHtml(item.name)}</span>
-        <span class="type-badge" data-type="${item.type}">${item.type}</span>
       </div>
       <div class="card-command">${escHtml(item.command)}</div>
       <div class="card-desc">${escHtml(item.description)}</div>
       <div class="card-footer">
-        <div class="card-tags">${tags.map(t => `<span class="tag">${escHtml(t)}</span>`).join('')}</div>
+        <div class="card-tags-text">${tagText}</div>
+        <span class="type-badge"><span class="type-dot" data-type="${item.type}"></span>${item.type}</span>
         ${item.command && item.command !== '(automatic)' && item.command !== '(ask Claude)' ? `<button class="copy-btn" onclick="copyCommand(this, '${escAttr(item.command)}')" title="Copy command">copy</button>` : ''}
       </div>
     `;
@@ -1464,10 +1544,13 @@ function renderScenarios() {
     const card = document.createElement('div');
     card.className = 'scenario-card';
     card.onclick = () => setSearch(s.query);
+    const sIcon = getScenarioIcon(s.label);
     card.innerHTML = `
-      <div class="scenario-icon">${s.icon}</div>
-      <div class="scenario-label">${s.label}</div>
-      <div class="scenario-tools">${s.tools.length} tools</div>
+      <div class="scenario-icon">${sIcon}</div>
+      <div class="scenario-text">
+        <div class="scenario-label">${s.label}</div>
+        <div class="scenario-tools">${s.tools.length} tools</div>
+      </div>
     `;
     grid.appendChild(card);
   });
@@ -1489,8 +1572,11 @@ function openDetail(item) {
   }).filter(Boolean).join('');
 
   content.innerHTML = `
-    <div class="detail-type-bar" style="background:${typeColor}"></div>
-    <div style="font-size:32px;margin-bottom:12px">${icon}</div>
+    <div class="detail-type-indicator">
+      <span class="detail-type-dot" style="background:${typeColor};box-shadow:0 0 0 3px ${typeColor}22"></span>
+      <span class="detail-type-label">${escHtml(item.type)}</span>
+    </div>
+    <div style="color:var(--text-dim);margin-bottom:12px">${getIcon(item)}</div>
     <div class="detail-name">${escHtml(item.name)}</div>
     <div class="detail-command">
       <span>${escHtml(item.command)}</span>
@@ -1804,12 +1890,16 @@ function renderWb() {
   const chat = document.getElementById('wb-chat');
   chat.innerHTML = '';
   if (wbMessages.length === 0) {
-    chat.innerHTML = '<div class="wb-msg assistant">Welcome to the Skill Planner. I\'ll help you think through what you want to build, then produce a brief you can paste into a Claude Code session with /skill-creator to execute it. What do you have in mind?</div>';
+    chat.innerHTML = `<div class="wb-msg assistant">
+      <div class="wb-msg-label"><span class="wb-msg-dot"></span>Skill Planner</div>
+      I'll help you think through what you want to build, then produce a brief you can paste into a Claude Code session with /skill-creator to execute it. What do you have in mind?
+    </div>`;
   } else {
     wbMessages.forEach(m => {
       const div = document.createElement('div');
       div.className = `wb-msg ${m.role}`;
-      div.textContent = m.content;
+      const label = m.role === 'user' ? 'You' : 'Skill Planner';
+      div.innerHTML = `<div class="wb-msg-label"><span class="wb-msg-dot"></span>${label}</div>${escHtml(m.content)}`;
       chat.appendChild(div);
     });
   }
