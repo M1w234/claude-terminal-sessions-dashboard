@@ -39,6 +39,29 @@
     --radius-sm: 6px;
   }
 
+  [data-theme="dark"] {
+    --bg: #1A1816;
+    --bg-surface: #242220;
+    --bg-sidebar: #1E1C1A;
+    --bg-hover: #2E2C28;
+    --bg-active: #383430;
+    --border: #3A3630;
+    --border-light: #2E2C28;
+    --text: #E8E0D8;
+    --text-secondary: #A89E94;
+    --text-dim: #7A7068;
+    --text-faint: #5A5248;
+    --accent-light: #3A2820;
+    --accent-faint: #2A1E18;
+    --user-bg: #242220;
+    --claude-bg: #2A2520;
+    --tool-bg: #2A2820;
+    --tool-border: #3A3630;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.4);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
@@ -948,6 +971,9 @@
       <button data-view="timeline">Timeline</button>
       <button data-view="stats">Analytics</button>
     </div>
+    <button onclick="toggleTheme()" title="Toggle dark mode" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--text-dim)">
+      <span id="theme-icon">&#9790;</span>
+    </button>
     <button class="topbar-terminal-btn" id="terminalToggle" onclick="toggleTerminal()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
@@ -1004,12 +1030,33 @@
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.min.js"></script>
 <script>
+// ── Theme ──
+function getPreferredTheme() {
+  const stored = localStorage.getItem('dashboard-theme');
+  if (stored) return stored;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-icon').innerHTML = theme === 'dark' ? '&#9788;' : '&#9790;';
+  localStorage.setItem('dashboard-theme', theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+applyTheme(getPreferredTheme());
+
 // ── State ──
 let allSessions = [];
 let allWorkspaces = [];
 let currentSessionId = null;
 let currentView = 'conversation';
 let activeWorkspace = null;  // null = show all
+let hideAutoTagged = true;   // hide Skill Planner sessions by default
 
 // ── API ──
 const api = {
@@ -1126,7 +1173,12 @@ function renderSessionList() {
   const list = document.getElementById('sessionList');
   const footer = document.getElementById('sidebarFooter');
 
-  list.innerHTML = allSessions.map(s => `
+  const filtered = hideAutoTagged
+    ? allSessions.filter(s => !s.autoTag)
+    : allSessions;
+  const hiddenCount = allSessions.length - filtered.length;
+
+  list.innerHTML = filtered.map(s => `
     <div class="session-item ${s.id === currentSessionId ? 'active' : ''}"
          data-id="${s.id}" onclick="selectSession('${s.id}')">
       <div class="name">${esc(s.name)}</div>
@@ -1135,11 +1187,21 @@ function renderSessionList() {
         <span class="dot"></span>
         <span>${s.messageCount} msgs</span>
         ${s.workspace ? `<span class="dot"></span><span class="ws-badge">${esc(s.workspace)}</span>` : ''}
+        ${s.autoTag ? `<span class="dot"></span><span class="ws-badge" style="background:#EDE7DD;color:var(--text-dim)">${esc(s.autoTag)}</span>` : ''}
       </div>
     </div>
   `).join('');
 
-  footer.textContent = `${allSessions.length} sessions${activeWorkspace ? ` in ${activeWorkspace}` : ''}`;
+  let footerText = `${filtered.length} sessions`;
+  if (activeWorkspace) footerText += ` in ${activeWorkspace}`;
+  if (hiddenCount > 0) footerText += ` (${hiddenCount} hidden)`;
+  footer.textContent = footerText;
+}
+
+function toggleAutoTagged() {
+  hideAutoTagged = !hideAutoTagged;
+  renderSessionList();
+  renderWorkspaceFilters();
 }
 
 async function loadWorkspaces() {
@@ -1155,6 +1217,8 @@ function renderWorkspaceFilters() {
     return;
   }
 
+  const autoTagCount = allSessions.filter(s => s.autoTag).length;
+
   container.innerHTML =
     `<button class="ws-chip ${!activeWorkspace ? 'active' : ''}" onclick="filterWorkspace(null)">All</button>` +
     allWorkspaces.map(ws => `
@@ -1162,7 +1226,8 @@ function renderWorkspaceFilters() {
               onclick="filterWorkspace('${esc(ws.name)}')">
         ${esc(ws.name)}<span class="chip-count">${ws.sessionCount}</span>
       </button>
-    `).join('');
+    `).join('') +
+    (autoTagCount > 0 ? `<button class="ws-chip ${hideAutoTagged ? '' : 'active'}" onclick="toggleAutoTagged()" style="margin-left:auto;${hideAutoTagged ? 'opacity:0.6' : ''}">${hideAutoTagged ? 'Show' : 'Hide'} Skill Planner<span class="chip-count">${autoTagCount}</span></button>` : '');
 }
 
 function filterWorkspace(ws) {

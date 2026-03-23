@@ -88,6 +88,31 @@ def load_index_entries():
     return entries
 
 
+DASHBOARD_PATH = str(Path(__file__).parent)
+
+# Patterns that indicate auto-generated sessions (e.g., from Skill Planner)
+_AUTO_SESSION_PATTERNS = [
+    "skill planning assistant",
+    "tool recommendation engine",
+    "catalog enrichment tool",
+    "produce a complete brief",
+    "conversation so far, produce",
+]
+
+
+def _detect_auto_tag(project_path: str, first_prompt: str) -> str:
+    """Detect if a session should be auto-tagged."""
+    # Sessions created from the dashboard directory are Skill Planner sessions
+    if project_path and ".claude/dashboard" in project_path:
+        return "Skill Planner"
+    # Also check prompt patterns as a fallback
+    lower = (first_prompt or "").lower()
+    for pattern in _AUTO_SESSION_PATTERNS:
+        if pattern in lower:
+            return "Skill Planner"
+    return ""
+
+
 def find_all_sessions():
     """Find all sessions across all projects."""
     index_entries = load_index_entries()
@@ -102,16 +127,19 @@ def find_all_sessions():
         auto_name = auto_names.get(sid, "")
         if auto_name:
             auto_name = auto_name.replace("-", " ").title()
+        project_path = entry.get("projectPath", "")
+        first_prompt = entry.get("firstPrompt", "")
         sessions.append({
             "id": sid,
-            "name": clean_text(entry.get("summary") or auto_name or (entry.get("firstPrompt", "")[:80])),
-            "firstPrompt": clean_text(entry.get("firstPrompt", "")),
+            "name": clean_text(entry.get("summary") or auto_name or (first_prompt[:80])),
+            "firstPrompt": clean_text(first_prompt),
             "messageCount": entry.get("messageCount", 0),
             "created": entry.get("created", ""),
             "modified": entry.get("modified", ""),
             "gitBranch": entry.get("gitBranch", ""),
-            "projectPath": entry.get("projectPath", ""),
+            "projectPath": project_path,
             "workspace": ws_map.get(sid, ""),
+            "autoTag": _detect_auto_tag(project_path, first_prompt),
             "source": "indexed",
         })
 
@@ -181,6 +209,7 @@ def find_all_sessions():
             "gitBranch": git_branch,
             "projectPath": cwd,
             "workspace": ws_map.get(sid, ""),
+            "autoTag": _detect_auto_tag(cwd, first_prompt),
             "source": "jsonl",
         })
 
