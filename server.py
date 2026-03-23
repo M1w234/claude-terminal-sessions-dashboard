@@ -195,6 +195,14 @@ def find_all_sessions():
         if not first_prompt:
             continue
 
+        # Use file modification time as the authoritative "modified" timestamp
+        # The JSONL scan only reads first 300 lines, so long sessions would have stale timestamps
+        try:
+            file_mtime = datetime.fromtimestamp(os.path.getmtime(jsonl_file), tz=timezone.utc).isoformat()
+            modified = file_mtime
+        except OSError:
+            pass
+
         auto_name = auto_names.get(sid, "")
         if auto_name:
             auto_name = auto_name.replace("-", " ").title()
