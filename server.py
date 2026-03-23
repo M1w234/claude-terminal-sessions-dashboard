@@ -15,7 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Query
+import subprocess as sp
+
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import anthropic
@@ -28,6 +30,9 @@ NAMES_FILE = CLAUDE_DIR / "session-names.json"
 WORKSPACES_FILE = CLAUDE_DIR / "session-workspaces.json"
 CMUX_MAP_FILE = CLAUDE_DIR / "cmux-session-map.json"
 SUMMARIES_FILE = CLAUDE_DIR / "session-summaries.json"
+SKILLS_DIR = CLAUDE_DIR / "skills"
+COMMANDS_DIR = CLAUDE_DIR / "commands"
+REGISTRY_FILE = Path(__file__).parent / "registry.json"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -583,6 +588,543 @@ Be specific about what was built, changed, or decided. Keep the total summary un
         return {"error": f"Failed to generate summary: {str(e)}"}
 
 
+# ── Skill Registry ──────────────────────────────────────────────────────────
+
+
+def parse_skill_frontmatter(filepath: Path):
+    """Parse YAML-like frontmatter from a skill.md or command.md file."""
+    try:
+        with open(filepath) as f:
+            content = f.read()
+    except IOError:
+        return None
+
+    if not content.startswith("---"):
+        return None
+
+    end = content.find("---", 3)
+    if end == -1:
+        return None
+
+    frontmatter = content[3:end].strip()
+    result = {}
+    for line in frontmatter.split("\n"):
+        if ":" in line:
+            key, val = line.split(":", 1)
+            val = val.strip().strip('"').strip("'")
+            result[key.strip()] = val
+    return result
+
+
+def build_catalog():
+    """Scan skills and commands, merge with registry.json enrichments."""
+    # Load enrichments
+    enrichments = {}
+    try:
+        with open(REGISTRY_FILE) as f:
+            enrichments = json.load(f)
+    except (IOError, json.JSONDecodeError):
+        pass
+
+    catalog = []
+
+    # Scan skills
+    if SKILLS_DIR.exists():
+        for skill_dir in sorted(SKILLS_DIR.iterdir()):
+            skill_file = skill_dir / "skill.md"
+            if not skill_file.exists():
+                continue
+            meta = parse_skill_frontmatter(skill_file)
+            if not meta:
+                continue
+
+            skill_id = skill_dir.name
+            enrich = enrichments.get(skill_id, {})
+
+            catalog.append({
+                "id": skill_id,
+                "name": meta.get("name", skill_id),
+                "command": f"/{skill_id}",
+                "description": meta.get("description", ""),
+                "type": "skill",
+                "category": enrich.get("category", "uncategorized"),
+                "subcategory": enrich.get("subcategory"),
+                "useCases": enrich.get("useCases", []),
+                "tags": enrich.get("tags", []),
+                "related": enrich.get("related", []),
+                "source": "apify" if "apify" in meta.get("description", "").lower() else "custom",
+            })
+
+    # Scan commands
+    if COMMANDS_DIR.exists():
+        for cmd_file in sorted(COMMANDS_DIR.glob("*.md")):
+            meta = parse_skill_frontmatter(cmd_file)
+            cmd_id = cmd_file.stem
+            enrich = enrichments.get(cmd_id, {})
+
+            catalog.append({
+                "id": cmd_id,
+                "name": meta.get("name", cmd_id) if meta else cmd_id,
+                "command": f"/{cmd_id}",
+                "description": (meta.get("description", "") if meta else ""),
+                "type": "command",
+                "category": enrich.get("category", "dev"),
+                "subcategory": enrich.get("subcategory"),
+                "useCases": enrich.get("useCases", []),
+                "tags": enrich.get("tags", []),
+                "related": enrich.get("related", []),
+                "source": "custom",
+            })
+
+    return catalog
+
+
+@app.get("/api/catalog")
+async def get_catalog():
+    loop = asyncio.get_event_loop()
+    catalog = await loop.run_in_executor(None, build_catalog)
+    return {"items": catalog, "count": len(catalog)}
+
+
+# ── Smart Search & Skill Workbench ───────────────────────────────────────────
+
+CLAUDE_BIN = os.path.expanduser("~/.local/bin/claude")
+_smart_search_cache: dict = {}
+
+
+def _run_claude(prompt: str, model: str = "haiku", timeout: int = 15) -> str:
+    """Run claude -p and return the response text."""
+    result = sp.run(
+        [CLAUDE_BIN, "-p", prompt, "--model", model],
+        capture_output=True, text=True, timeout=timeout,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Claude CLI error: {result.stderr[:200]}")
+    return result.stdout.strip()
+
+
+def _catalog_summary() -> str:
+    """Build a compact text summary of the catalog for LLM context."""
+    catalog = build_catalog()
+    lines = []
+    for item in catalog:
+        use_cases = ", ".join(item.get("useCases", [])[:3])
+        tags = ", ".join(item.get("tags", [])[:5])
+        lines.append(
+            f"- {item['id']} ({item['command']}): {item['description'][:150]}"
+            + (f" | Use cases: {use_cases}" if use_cases else "")
+            + (f" | Tags: {tags}" if tags else "")
+        )
+    return "\n".join(lines)
+
+
+@app.post("/api/smart-search")
+async def smart_search(request: Request):
+    body = await request.json()
+    query = body.get("query", "").strip()
+    if not query:
+        return {"error": "No query provided"}
+
+    # Check cache
+    if query.lower() in _smart_search_cache:
+        return {"results": _smart_search_cache[query.lower()], "cached": True}
+
+    catalog_text = await asyncio.get_event_loop().run_in_executor(None, _catalog_summary)
+
+    prompt = f"""You are a tool recommendation engine. Given a user's query and a catalog of tools, return the most relevant tools ranked by relevance.
+
+CATALOG:
+{catalog_text}
+
+USER QUERY: "{query}"
+
+Return a JSON array of the top 5-10 most relevant tools. Each entry must have:
+- "id": the tool's id (exact match from catalog)
+- "relevance": a brief explanation of why this tool is relevant (1 sentence)
+- "score": relevance score from 0.0 to 1.0
+
+Return ONLY the JSON array, no other text. Example:
+[{{"id": "competitor-intel", "relevance": "Directly analyzes competitors by location and industry", "score": 0.95}}]"""
+
+    try:
+        raw = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _run_claude(prompt, model="haiku", timeout=10)
+        )
+        # Parse JSON from response (handle markdown code fences)
+        raw = raw.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+            raw = raw.rsplit("```", 1)[0]
+        results = json.loads(raw)
+        # Cache it
+        _smart_search_cache[query.lower()] = results
+        return {"results": results, "cached": False}
+    except sp.TimeoutExpired:
+        return {"error": "timeout", "message": "Smart search timed out"}
+    except (json.JSONDecodeError, RuntimeError) as e:
+        return {"error": "parse_error", "message": str(e)}
+
+
+@app.get("/api/skill/{skill_id}/content")
+async def get_skill_content(skill_id: str):
+    """Return the full raw content of a skill.md or command.md file."""
+    # Check skills dir
+    skill_file = SKILLS_DIR / skill_id / "skill.md"
+    if skill_file.exists():
+        content = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: skill_file.read_text()
+        )
+        return {"content": content, "found": True, "path": str(skill_file)}
+
+    # Check commands dir
+    cmd_file = COMMANDS_DIR / f"{skill_id}.md"
+    if cmd_file.exists():
+        content = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: cmd_file.read_text()
+        )
+        return {"content": content, "found": True, "path": str(cmd_file)}
+
+    return {"content": "", "found": False}
+
+
+_SKILL_KNOWLEDGE_BASE = """
+## How Claude Code Skills Work
+
+### Anatomy of a Skill
+```
+skill-name/
+├── SKILL.md (required)
+│   ├── YAML frontmatter (name, description — this is the primary trigger mechanism)
+│   └── Markdown instructions (the skill's body — loaded when triggered)
+└── Bundled Resources (optional)
+    ├── scripts/    - Executable code for deterministic/repetitive tasks
+    ├── references/ - Docs loaded into context as needed
+    └── assets/     - Files used in output (templates, icons, fonts)
+```
+
+### Progressive Disclosure (3 levels)
+1. **Metadata** (name + description) — ALWAYS in context (~100 words). This determines triggering.
+2. **SKILL.md body** — loaded when skill triggers (<500 lines ideal, <5k words)
+3. **Bundled resources** — loaded as needed (unlimited; scripts can execute without loading)
+
+### SKILL.md Structure for Simple Skills (e.g., Apify scrapers)
+```markdown
+---
+name: skill-name
+description: "What it does + when to trigger. Be specific and slightly 'pushy' — Claude tends to undertrigger."
+---
+# Display Name
+Brief intro of what this skill does.
+
+## What You Get
+- Bullet list of deliverables
+
+## Workflow
+### Step 1: Parse the User's Request
+Extract from the user's message:
+- **Parameter 1** (required) — description
+- **Parameter 2** (optional) — defaults to X
+
+### Step 2: Run the Tool
+```bash
+# Code blocks with API calls, curl commands, scripts
+```
+
+### Step 3: Summarize Results
+Present the data in a clear format. Include key metrics.
+```
+
+### SKILL.md Structure for Complex Skills (multi-phase orchestration)
+- Uses **Phases** instead of Steps (Phase 0-N)
+- May delegate to sub-agents
+- Has confidence gates / conditional logic between phases
+- Explicit error handling section
+- Inter-phase communication via JSON files
+
+### Description Writing (Critical for Triggering)
+- The description is THE primary mechanism that determines if Claude uses the skill
+- Be specific: include exact phrases a user would say
+- Be slightly "pushy" — Claude tends to undertrigger
+- Include both what the skill does AND when to use it
+- Example: "Scrape Instagram profile data (bio, followers, stats, recent posts) for one or more usernames via Apify. Use when the user wants profile intel on an Instagram account."
+
+### Key Patterns in Existing Skills
+- **Apify-based skills**: Parse user input → build Apify actor input JSON → run via curl to Apify API → download results → summarize
+- **MCP-based skills**: Leverage existing MCP tool connections (Notion, Canva, etc.)
+- **CLI-based skills**: Build and execute terminal commands with proper error handling
+- **Orchestration skills**: Multi-phase with agent delegation, JSON handoffs, confidence gates
+
+### The /skill-creator Workflow (what happens AFTER planning)
+1. Capture intent and interview
+2. Write draft SKILL.md
+3. Create 2-3 test prompts
+4. Run test cases (with-skill AND baseline comparison)
+5. User reviews results in eval viewer
+6. Iterate based on feedback
+7. Optimize description for better triggering
+8. Package and deliver
+
+### What Makes a Skill Great
+- Description triggers reliably on the right queries and NOT on wrong ones
+- SKILL.md is lean (<2000 words) with detailed content in references/
+- Workflow is clear: parse → execute → present
+- Edge cases are handled gracefully (rate limits, missing data, auth)
+- Explains WHY behind instructions, not just rigid MUSTs
+- Includes bundled scripts for deterministic/repetitive operations
+- Test cases cover happy path + edge cases
+"""
+
+
+def _build_system_prompt(mode: str, catalog_summary: str) -> str:
+    """Build a rich system prompt for the skill planner."""
+    prompts = WORKBENCH_SYSTEM_PROMPTS[mode]
+    return prompts.replace("{SKILL_KNOWLEDGE_BASE}", _SKILL_KNOWLEDGE_BASE).replace("{CATALOG_SUMMARY}", catalog_summary)
+
+
+WORKBENCH_SYSTEM_PROMPTS = {
+    "create": """You are an expert Claude Code skill planning assistant, powered by Opus. Your job is to help the user think through what they want a new skill to do BEFORE they open a Claude Code session to build it with /skill-creator.
+
+You are the PLANNING layer. /skill-creator in Claude Code is the EXECUTION layer — it writes the SKILL.md, runs test cases, benchmarks, and optimizes the description. You should NOT produce the final skill content. Instead, help the user develop a clear, thorough brief that gives /skill-creator a massive head start.
+
+{SKILL_KNOWLEDGE_BASE}
+
+## Your Existing Skill Catalog (for reference and pattern-matching)
+{CATALOG_SUMMARY}
+
+## How to Guide the User
+
+Be conversational and thoughtful. Ask 2-3 questions at a time, not all at once. Build understanding incrementally. Tailor your questions based on what type of skill they're describing:
+
+**For Apify/scraping skills**, ask about:
+- Which platform/data source? Is there an existing Apify actor?
+- What specific data fields do they need?
+- What's the output format? (JSON files, summaries, both?)
+- Rate limits or pagination concerns?
+- Point to similar existing skills as templates (e.g., "ig-profile follows a pattern you could reuse")
+
+**For integration/MCP skills**, ask about:
+- Which service are they connecting to?
+- What operations? (read, write, sync?)
+- Authentication requirements?
+- Error handling for API failures?
+
+**For workflow/orchestration skills**, ask about:
+- How many phases? What's the flow between them?
+- Are there decision points or gates?
+- What data passes between phases?
+- Should it delegate to sub-agents?
+
+**For content creation skills**, ask about:
+- What's the input format?
+- What quality/style standards?
+- Any templates or assets to bundle?
+- How should output be presented?
+
+Always consider:
+1. **Purpose**: What problem does this solve? What's the user's actual goal?
+2. **Trigger**: What would someone say to invoke this? What SHOULDN'T trigger it?
+3. **Data source**: What API/tool/service powers it?
+4. **Input**: Required vs optional parameters, with sensible defaults
+5. **Output**: What the user gets back — format, location, structure
+6. **Workflow**: High-level steps with enough detail for implementation
+7. **Edge cases**: What could go wrong? How to handle gracefully?
+8. **Similar skills**: Which existing skills should /skill-creator use as templates?
+
+If existing skills are referenced below, study their patterns deeply — they show what works.""",
+
+    "modify": """You are an expert Claude Code skill modification planner, powered by Opus. The user wants to change an existing skill and needs help thinking through the changes BEFORE implementing with /skill-creator.
+
+{SKILL_KNOWLEDGE_BASE}
+
+## Your Existing Skill Catalog
+{CATALOG_SUMMARY}
+
+## How to Help
+
+The referenced skill content is provided below. Work through these areas:
+
+1. **Understand the current skill thoroughly**: Walk through what it does, how it's structured, what each workflow step accomplishes. Point out its strengths and any existing limitations.
+
+2. **Clarify the desired changes**: What specifically should change? Probe for details:
+   - New functionality being added?
+   - Different output format or additional data fields?
+   - New parameters or input types?
+   - Better error handling or edge case coverage?
+   - Performance or efficiency improvements?
+
+3. **Assess impact**: How do the changes ripple through the skill?
+   - Does the description/triggering need to change?
+   - Which workflow steps are affected?
+   - Are new API calls, scripts, or references needed?
+   - Could this break existing behavior?
+
+4. **Plan the approach**:
+   - Modify the existing skill vs. create a new one?
+   - What sections of SKILL.md change?
+   - Should content move to references/ for better progressive disclosure?
+   - Any new bundled scripts or assets needed?
+
+5. **Test strategy**: What test cases would validate the changes work correctly?
+
+Reference specific sections and line content of the existing skill when discussing changes. Be concrete, not abstract.""",
+
+    "explain": """You are an expert Claude Code skill analyst, powered by Opus. The user wants to deeply understand how skills work.
+
+{SKILL_KNOWLEDGE_BASE}
+
+## Your Existing Skill Catalog
+{CATALOG_SUMMARY}
+
+The referenced skill content is provided below. Provide thorough analysis:
+
+- **Architecture**: How is the skill structured? What design pattern does it follow?
+- **Workflow walkthrough**: Step by step, what happens when this skill is invoked?
+- **Data flow**: What input comes in, how is it transformed, what output comes out?
+- **API/tool integration**: What external calls are made? What data comes back? What could fail?
+- **Progressive disclosure**: What's in SKILL.md vs references/ vs scripts/? Is the structure optimal?
+- **Trigger analysis**: How is the description written? Would it trigger reliably? Are there false-positive risks?
+- **Patterns worth reusing**: What techniques or structures could be borrowed for other skills?
+
+If multiple skills are referenced, compare them in depth: architecture differences, when to use each, patterns that could cross-pollinate.""",
+
+    "enrich": """You are a Claude Code catalog enrichment tool. For each referenced skill, generate registry.json enrichment data.
+
+{CATALOG_SUMMARY}
+
+Output a JSON object where each key is the skill ID, and the value contains:
+- "category": one of "social-media", "lead-gen", "local", "seo", "web", "content", "dev"
+- "subcategory": platform name if applicable (e.g., "instagram", "facebook") or null
+- "useCases": array of 5-8 natural language phrases a real person would say when they need this tool (conversational, specific, varied length)
+- "tags": array of 8-12 searchable keywords covering the platform, action, data type, and use case
+- "related": array of 3-5 IDs of related skills from the catalog (use exact IDs from the catalog above)
+
+Return ONLY the JSON object, no other text.""",
+
+    "generate-output": """Based on the conversation so far, produce a complete, detailed brief to paste into a fresh Claude Code session as the FIRST MESSAGE when using /skill-creator.
+
+{SKILL_KNOWLEDGE_BASE}
+
+Structure the brief as follows. Fill in ALL sections with specific, concrete details from the conversation. This brief should give /skill-creator everything it needs to start building immediately without asking many follow-up questions.
+
+---
+I want to [create / modify] a skill. Here's what I've planned out:
+
+**Skill name**: [name]
+**Purpose**: [1-2 sentences on what it does and the problem it solves]
+
+**When it should trigger** (specific phrases users would say):
+- "[phrase 1]"
+- "[phrase 2]"
+- "[phrase 3]"
+- "[phrase 4]"
+
+**When it should NOT trigger** (near-misses to avoid):
+- "[phrase that's close but should use a different tool instead]"
+
+**Data source / API**: [what powers this skill — be specific about the API, actor ID, endpoint, etc.]
+
+**User input**:
+- Required: [list each required parameter with description]
+- Optional: [list each optional parameter with default value]
+
+**Expected output**:
+- Format: [JSON files, markdown summary, table, etc.]
+- Location: [where files are saved, e.g., ~/skill-output/]
+- Presentation: [how results should be summarized to the user]
+
+**Workflow steps**:
+1. Parse user input — extract [specific parameters] from their message
+2. [Specific API call or tool invocation with details]
+3. [Process/transform results — filtering, enrichment, formatting]
+4. [Present to user — summary format, key metrics to highlight]
+
+**Edge cases to handle**:
+- [Specific edge case 1 and how to handle it]
+- [Specific edge case 2 and how to handle it]
+
+**Reference skills to use as templates**:
+- [skill-id]: [what pattern to borrow from it — e.g., "use its Apify actor input structure"]
+- [skill-id]: [what pattern to borrow]
+
+**Suggested skill structure**:
+```
+skill-name/
+├── SKILL.md
+├── references/  (if needed — list what goes here)
+└── scripts/     (if needed — list what goes here)
+```
+
+**Test cases to try**:
+1. "[realistic user prompt]" → expected: [specific expected behavior]
+2. "[different variation]" → expected: [specific expected behavior]
+3. "[edge case prompt]" → expected: [graceful handling description]
+
+Please use /skill-creator to build this out, run the test cases, and iterate until it's solid.
+---
+
+Be thorough and specific. The more detail you provide, the better the skill will be on the first iteration.""",
+}
+
+
+@app.post("/api/skill-builder")
+async def skill_builder(request: Request):
+    body = await request.json()
+    messages = body.get("messages", [])
+    referenced_skills = body.get("referencedSkills", [])
+    mode = body.get("mode", "create")
+
+    if not messages:
+        return {"error": "No messages provided"}
+
+    # Load referenced skill content
+    skill_context = ""
+    for skill_id in referenced_skills[:5]:
+        skill_file = SKILLS_DIR / skill_id / "skill.md"
+        if not skill_file.exists():
+            skill_file = COMMANDS_DIR / f"{skill_id}.md"
+        if skill_file.exists():
+            try:
+                content = skill_file.read_text()
+                skill_context += f"\n\n--- SKILL: {skill_id} ---\n{content}\n--- END SKILL ---\n"
+            except IOError:
+                pass
+
+    # Build system prompt with full context
+    catalog_text = _catalog_summary()
+    system = _build_system_prompt(
+        mode if mode in WORKBENCH_SYSTEM_PROMPTS else "create",
+        catalog_text,
+    )
+    if skill_context:
+        system += f"\n\nREFERENCED SKILL CONTENT (full source):\n{skill_context}"
+
+    # Build conversation for claude -p
+    conversation_parts = [f"<system>{system}</system>"]
+    for msg in messages[-15:]:  # Last 15 messages for context management
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role == "user":
+            conversation_parts.append(f"Human: {content}")
+        else:
+            conversation_parts.append(f"Assistant: {content}")
+
+    # Add final Human turn if last message was assistant
+    if messages and messages[-1].get("role") == "assistant":
+        conversation_parts.append("Human: Please continue.")
+
+    prompt = "\n\n".join(conversation_parts)
+
+    try:
+        raw = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _run_claude(prompt, model="opus", timeout=120)
+        )
+        return {"response": raw}
+    except sp.TimeoutExpired:
+        return {"error": "timeout", "message": "The builder is taking too long. Try again."}
+    except RuntimeError as e:
+        return {"error": "cli_error", "message": str(e)}
+
+
 # ── Serve Frontend ───────────────────────────────────────────────────────────
 
 
@@ -591,3 +1133,8 @@ DASHBOARD_DIR = Path(__file__).parent
 @app.get("/")
 def serve_frontend():
     return FileResponse(DASHBOARD_DIR / "index.html")
+
+
+@app.get("/registry")
+def serve_registry():
+    return FileResponse(DASHBOARD_DIR / "registry.html")

@@ -1,0 +1,268 @@
+{
+  "ig-profile": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["research an Instagram account", "get competitor follower counts", "find someone's bio and website from IG", "check if an account is verified"],
+    "tags": ["instagram", "profile", "bio", "followers", "research", "competitor"],
+    "related": ["ig-posts", "ig-reels", "ig-followers", "ig-stories", "lead-gen"]
+  },
+  "ig-posts": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["analyze someone's post performance", "see what content a competitor is posting", "track engagement on Instagram posts", "research content strategy"],
+    "tags": ["instagram", "posts", "engagement", "likes", "comments", "captions", "content"],
+    "related": ["ig-profile", "ig-reels", "ig-comments", "ig-hashtag"]
+  },
+  "ig-reels": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["analyze reel performance", "see which reels are going viral", "research short-form video content", "check reel views and shares"],
+    "tags": ["instagram", "reels", "video", "views", "shares", "viral", "short-form"],
+    "related": ["ig-posts", "ig-profile", "ig-transcript", "ig-download", "tiktok-scrape"]
+  },
+  "ig-stories": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["save Instagram stories before they expire", "monitor what a brand posts in stories", "download story content", "track story mentions"],
+    "tags": ["instagram", "stories", "ephemeral", "download", "monitor"],
+    "related": ["ig-profile", "ig-download", "ig-tagged"]
+  },
+  "ig-comments": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["read comments on a post", "analyze audience sentiment", "see what people are saying about a brand", "research audience feedback"],
+    "tags": ["instagram", "comments", "sentiment", "feedback", "audience"],
+    "related": ["ig-posts", "ig-reels", "fb-comments", "tiktok-comments"]
+  },
+  "ig-hashtag": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["research hashtag performance", "find content by topic", "competitive hashtag analysis", "discover trending hashtags"],
+    "tags": ["instagram", "hashtags", "trending", "topics", "discovery"],
+    "related": ["ig-search", "ig-posts", "ig-reels"]
+  },
+  "ig-tagged": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["monitor brand mentions", "find user-generated content", "see what others post about an account", "track brand tags"],
+    "tags": ["instagram", "tagged", "mentions", "ugc", "brand", "monitoring"],
+    "related": ["ig-profile", "ig-comments", "ig-search"]
+  },
+  "ig-search": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["find Instagram accounts by keyword", "discover profiles in a niche", "search for hashtags or locations", "find potential leads on Instagram"],
+    "tags": ["instagram", "search", "discovery", "profiles", "hashtags", "locations"],
+    "related": ["ig-profile", "ig-hashtag", "lead-gen"]
+  },
+  "ig-followers": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["quick follower count check", "compare follower counts between accounts", "see how many followers someone has"],
+    "tags": ["instagram", "followers", "following", "count", "quick"],
+    "related": ["ig-profile"]
+  },
+  "ig-download": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["download Instagram photos and videos", "save reels at original quality", "bulk download media from a profile", "archive Instagram content"],
+    "tags": ["instagram", "download", "media", "photos", "videos", "bulk", "archive"],
+    "related": ["ig-posts", "ig-reels", "ig-stories"]
+  },
+  "ig-transcript": {
+    "category": "social-media",
+    "subcategory": "instagram",
+    "useCases": ["get what someone said in a reel", "transcribe Instagram videos", "analyze content themes from speech", "repurpose video content to text"],
+    "tags": ["instagram", "transcript", "speech", "audio", "ai", "transcription", "repurpose"],
+    "related": ["ig-reels", "yt-transcript", "ig-download"]
+  },
+  "fb-pages": {
+    "category": "social-media",
+    "subcategory": "facebook",
+    "useCases": ["get business contact details from Facebook", "find a company's address and phone", "research Facebook page metadata", "get business category info"],
+    "tags": ["facebook", "pages", "business", "contact", "phone", "email", "address"],
+    "related": ["fb-posts", "fb-comments", "fb-ads", "contact-scrape"]
+  },
+  "fb-posts": {
+    "category": "social-media",
+    "subcategory": "facebook",
+    "useCases": ["analyze Facebook page content", "track competitor posts on Facebook", "research Facebook marketing strategy", "see post engagement metrics"],
+    "tags": ["facebook", "posts", "engagement", "likes", "shares", "reactions", "marketing"],
+    "related": ["fb-pages", "fb-comments", "fb-ads", "ig-posts"]
+  },
+  "fb-comments": {
+    "category": "social-media",
+    "subcategory": "facebook",
+    "useCases": ["read Facebook comments", "analyze audience reactions on Facebook", "monitor discussions on posts", "research sentiment on Facebook"],
+    "tags": ["facebook", "comments", "sentiment", "discussions", "reactions"],
+    "related": ["fb-posts", "fb-pages", "ig-comments"]
+  },
+  "fb-ads": {
+    "category": "social-media",
+    "subcategory": "facebook",
+    "useCases": ["see what ads a competitor is running", "research ad strategies", "spy on Facebook and Instagram ads", "analyze ad creative and copy", "check ad spend ranges"],
+    "tags": ["facebook", "instagram", "ads", "advertising", "creative", "spy", "competitor", "meta"],
+    "related": ["fb-posts", "fb-pages", "competitor-intel", "google-serp"]
+  },
+  "twitter-scrape": {
+    "category": "social-media",
+    "subcategory": "twitter",
+    "useCases": ["analyze tweets from an account", "monitor Twitter conversations", "research hashtags on X", "get profile data from Twitter"],
+    "tags": ["twitter", "x", "tweets", "conversations", "hashtags", "profiles"],
+    "related": ["reddit-scrape", "ig-profile"]
+  },
+  "tiktok-scrape": {
+    "category": "social-media",
+    "subcategory": "tiktok",
+    "useCases": ["analyze TikTok content", "research TikTok trends", "get competitor intelligence on TikTok", "check video engagement stats"],
+    "tags": ["tiktok", "videos", "trends", "engagement", "music", "hashtags"],
+    "related": ["tiktok-comments", "ig-reels", "yt-scrape"]
+  },
+  "tiktok-comments": {
+    "category": "social-media",
+    "subcategory": "tiktok",
+    "useCases": ["read TikTok comments", "analyze audience reactions on TikTok", "research sentiment on TikTok videos"],
+    "tags": ["tiktok", "comments", "sentiment", "reactions", "engagement"],
+    "related": ["tiktok-scrape", "ig-comments"]
+  },
+  "yt-scrape": {
+    "category": "social-media",
+    "subcategory": "youtube",
+    "useCases": ["research YouTube channels", "analyze video performance", "pull video metadata and comments", "research competitor YouTube content"],
+    "tags": ["youtube", "videos", "channels", "playlists", "comments", "metadata"],
+    "related": ["yt-transcript", "tiktok-scrape", "ig-reels"]
+  },
+  "yt-transcript": {
+    "category": "social-media",
+    "subcategory": "youtube",
+    "useCases": ["get what someone said in a YouTube video", "extract video transcripts with timestamps", "repurpose YouTube content to text", "analyze video content"],
+    "tags": ["youtube", "transcript", "captions", "timestamps", "repurpose", "text"],
+    "related": ["yt-scrape", "ig-transcript"]
+  },
+  "reddit-scrape": {
+    "category": "social-media",
+    "subcategory": "reddit",
+    "useCases": ["research topics on Reddit", "analyze Reddit discussions", "find pain points in subreddits", "monitor communities"],
+    "tags": ["reddit", "posts", "comments", "subreddits", "discussions", "communities"],
+    "related": ["twitter-scrape", "google-serp", "web-crawl"]
+  },
+  "linkedin-profiles": {
+    "category": "social-media",
+    "subcategory": "linkedin",
+    "useCases": ["research people on LinkedIn", "find decision-makers at a company", "enrich lead data with work history", "look up someone's professional background"],
+    "tags": ["linkedin", "profiles", "people", "work history", "skills", "education", "leads"],
+    "related": ["linkedin-companies", "lead-gen", "contact-scrape"]
+  },
+  "linkedin-companies": {
+    "category": "social-media",
+    "subcategory": "linkedin",
+    "useCases": ["research a company on LinkedIn", "get company size and industry", "find company specialties", "enrich business data"],
+    "tags": ["linkedin", "companies", "industry", "size", "business", "research"],
+    "related": ["linkedin-profiles", "scout", "competitor-intel"]
+  },
+  "lead-gen": {
+    "category": "lead-gen",
+    "subcategory": null,
+    "useCases": ["find leads on Instagram", "generate a list of prospects", "find and qualify potential clients", "collect contact info from IG profiles", "score leads against business criteria"],
+    "tags": ["leads", "prospects", "clients", "instagram", "contacts", "scoring", "outreach"],
+    "related": ["ig-search", "ig-profile", "contact-scrape", "linkedin-profiles"]
+  },
+  "contact-scrape": {
+    "category": "lead-gen",
+    "subcategory": null,
+    "useCases": ["find email addresses from a website", "get phone numbers from a business site", "extract contact info from any URL", "find social media links from a website"],
+    "tags": ["email", "phone", "contact", "website", "extract", "social links"],
+    "related": ["lead-gen", "fb-pages", "web-crawl", "linkedin-profiles"]
+  },
+  "competitor-intel": {
+    "category": "lead-gen",
+    "subcategory": null,
+    "useCases": ["analyze competitors in my area", "competitive landscape analysis", "spy on competitor businesses", "compare businesses by location", "find market gaps"],
+    "tags": ["competitor", "competitive", "analysis", "landscape", "pricing", "market", "gaps"],
+    "related": ["gmaps-scrape", "gmaps-reviews", "fb-ads", "scout", "google-serp"]
+  },
+  "scout": {
+    "category": "lead-gen",
+    "subcategory": null,
+    "useCases": ["assess a business for AI Employee opportunities", "research a target company", "evaluate a prospect's operations", "run a full business assessment"],
+    "tags": ["assessment", "business", "ai employee", "opportunity", "research", "prospect"],
+    "related": ["competitor-intel", "linkedin-companies", "web-crawl", "contact-scrape"]
+  },
+  "gmaps-scrape": {
+    "category": "local",
+    "subcategory": null,
+    "useCases": ["find businesses on Google Maps", "get business contact details from Maps", "research local competitors", "analyze local market"],
+    "tags": ["google maps", "businesses", "local", "contact", "ratings", "location"],
+    "related": ["gmaps-reviews", "yelp-reviews", "competitor-intel"]
+  },
+  "gmaps-reviews": {
+    "category": "local",
+    "subcategory": null,
+    "useCases": ["analyze Google Maps reviews", "find customer pain points from reviews", "competitive review analysis", "research customer sentiment"],
+    "tags": ["google maps", "reviews", "ratings", "sentiment", "pain points", "feedback"],
+    "related": ["gmaps-scrape", "yelp-reviews", "competitor-intel"]
+  },
+  "yelp-reviews": {
+    "category": "local",
+    "subcategory": null,
+    "useCases": ["analyze Yelp reviews", "compare business reputations", "research customer sentiment on Yelp", "find what customers complain about"],
+    "tags": ["yelp", "reviews", "ratings", "reputation", "sentiment", "complaints"],
+    "related": ["gmaps-reviews", "gmaps-scrape", "competitor-intel"]
+  },
+  "google-serp": {
+    "category": "seo",
+    "subcategory": null,
+    "useCases": ["check how something ranks on Google", "do keyword research", "analyze search visibility", "see who ranks for a keyword", "research People Also Ask questions"],
+    "tags": ["google", "search", "seo", "rankings", "keywords", "serp", "visibility"],
+    "related": ["screaming-frog-cli", "web-crawl", "competitor-intel"]
+  },
+  "screaming-frog-cli": {
+    "category": "seo",
+    "subcategory": null,
+    "useCases": ["run an SEO crawl", "audit a website for SEO issues", "export SEO data", "set up automated crawl schedules", "build Screaming Frog commands"],
+    "tags": ["seo", "crawl", "audit", "technical seo", "screaming frog", "automation"],
+    "related": ["google-serp", "web-crawl"]
+  },
+  "web-crawl": {
+    "category": "web",
+    "subcategory": null,
+    "useCases": ["crawl a website", "extract content from a site", "convert a website to Markdown", "prepare website content for analysis", "deep site analysis"],
+    "tags": ["web", "crawl", "scrape", "markdown", "content", "extract", "site"],
+    "related": ["contact-scrape", "google-serp", "screaming-frog-cli"]
+  },
+  "frontend-design": {
+    "category": "content",
+    "subcategory": null,
+    "useCases": ["build a web page", "create a landing page", "design a UI component", "make a nice-looking frontend", "build a web app interface"],
+    "tags": ["frontend", "design", "web", "ui", "html", "css", "landing page", "interface"],
+    "related": ["playground", "algorithmic-art"]
+  },
+  "algorithmic-art": {
+    "category": "content",
+    "subcategory": null,
+    "useCases": ["create generative art", "make art with code", "build a particle system", "create flow field artwork", "make interactive visuals"],
+    "tags": ["art", "generative", "p5js", "creative coding", "particles", "flow fields", "visuals"],
+    "related": ["frontend-design", "playground"]
+  },
+  "render-to-photo-homes": {
+    "category": "content",
+    "subcategory": "real-estate",
+    "useCases": ["make a rendering look like a real photo", "convert architectural rendering to photorealism", "turn a listing render into a photograph", "derender a property image"],
+    "tags": ["real estate", "rendering", "photorealism", "architecture", "property", "photo"],
+    "related": ["render-prep-home"]
+  },
+  "render-prep-home": {
+    "category": "content",
+    "subcategory": "real-estate",
+    "useCases": ["preprocess renderings for photo conversion", "batch convert architectural renderings", "dual-prompt photorealism conversion", "prep renderings with two style options"],
+    "tags": ["real estate", "rendering", "preprocessing", "batch", "photorealism"],
+    "related": ["render-to-photo-homes"]
+  },
+  "imessage-help": {
+    "category": "dev",
+    "subcategory": null,
+    "useCases": ["check my iMessages", "read recent messages", "search iMessage history"],
+    "tags": ["imessage", "messages", "sms", "text", "apple"],
+    "related": []
+  }
+}

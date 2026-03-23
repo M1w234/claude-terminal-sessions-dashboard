@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Registry</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23C45A36'/%3E%3Cpath d='M19.5 12.5c0 0-1.5-1.5-3.5-1.5s-3.5 1.5-3.5 1.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M12.5 17c0 0 1 2.5 3.5 2.5s3.5-2.5 3.5-2.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='13.5' cy='14.5' r='1' fill='%23FFF'/%3E%3Ccircle cx='18.5' cy='14.5' r='1' fill='%23FFF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAF6F1;
+  --bg-surface: #FFFFFF;
+  --bg-hover: #EDE7DD;
+  --bg-active: #E8DFD3;
+  --border: #E0D6C8;
+  --border-light: #EDE7DD;
+  --text: #1A1A1A;
+  --text-secondary: #5C5650;
+  --text-dim: #8A7F74;
+  --text-faint: #B5AA9D;
+  --accent: #C45A36;
+  --accent-hover: #A84B2C;
+  --accent-light: #F2DDD4;
+  --accent-faint: #FAF0EB;
+  --green: #2D8A4E;
+  --indigo: #5B6ABF;
+  --gold: #B8860B;
+  --purple: #7B68AE;
+  --shadow-sm: 0 1px 2px rgba(26,26,26,0.04);
+  --shadow-md: 0 2px 8px rgba(26,26,26,0.06);
+  --shadow-lg: 0 4px 16px rgba(26,26,26,0.08);
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  --type-skill: #C45A36;
+  --type-mcp: #2D8A4E;
+  --type-cli: #5B6ABF;
+  --type-hook: #B8860B;
+  --type-plugin: #7B68AE;
+  --type-command: #C45A36;
+}
+
+[data-theme="dark"] {
+  --bg: #1A1816;
+  --bg-surface: #242220;
+  --bg-hover: #2E2C28;
+  --bg-active: #383430;
+  --border: #3A3630;
+  --border-light: #2E2C28;
+  --text: #E8E0D8;
+  --text-secondary: #A89E94;
+  --text-dim: #7A7068;
+  --text-faint: #5A5248;
+  --accent-light: #3A2820;
+  --accent-faint: #2A1E18;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-nav {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+}
+.topbar-nav:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.topbar-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.theme-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.kbd-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 4px;
+}
+
+/* ── Main Content ── */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ── Search ── */
+.search-section {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.search-prompt {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  font-weight: 300;
+}
+
+.search-bar {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 14px 20px 14px 44px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-bar input:focus {
+  border-color: var(--accent);
+}
+.search-bar input::placeholder {
+  color: var(--text-faint);
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.search-kbd {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  pointer-events: none;
+}
+
+.result-count {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 10px;
+}
+
+/* ── Filter Pills ── */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.pill {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.pill:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-faint);
+}
+.pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.pill .count {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+/* ── Card Grid ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  border-left: 3px solid var(--type-skill);
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border);
+}
+.card.focused {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.card[data-type="mcp"]     { border-left-color: var(--type-mcp); }
+.card[data-type="cli"]     { border-left-color: var(--type-cli); }
+.card[data-type="hook"]    { border-left-color: var(--type-hook); }
+.card[data-type="plugin"]  { border-left-color: var(--type-plugin); }
+.card[data-type="command"] { border-left-color: var(--type-command); }
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.card-icon {
+  font-size: 20px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.card-name {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+
+.card-command {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+.tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  color: var(--text-dim);
+}
+
+.type-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.type-badge[data-type="skill"]   { background: var(--type-skill); }
+.type-badge[data-type="mcp"]     { background: var(--type-mcp); }
+.type-badge[data-type="cli"]     { background: var(--type-cli); }
+.type-badge[data-type="hook"]    { background: var(--type-hook); }
+.type-badge[data-type="plugin"]  { background: var(--type-plugin); }
+.type-badge[data-type="command"] { background: var(--type-command); }
+
+.copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: all 0.15s;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.copy-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.copy-btn.copied {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+/* ── Detail Panel ── */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,26,0.3);
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+.detail-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+[data-theme="dark"] .detail-overlay {
+  background: rgba(0,0,0,0.5);
+}
+
+.detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(480px, 100vw);
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  z-index: 201;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+  padding: 28px;
+}
+.detail-panel.open {
+  transform: translateX(0);
+}
+
+.detail-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-dim);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+.detail-close:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.detail-type-bar {
+  height: 4px;
+  border-radius: 2px;
+  margin-bottom: 20px;
+}
+
+.detail-name {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.detail-command {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--accent);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-source {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.detail-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-use-cases {
+  list-style: none;
+  padding: 0;
+}
+.detail-use-cases li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 5px 0 5px 18px;
+  position: relative;
+}
+.detail-use-cases li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.detail-related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.related-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.related-link:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+/* ── Use Case Scenarios ── */
+.scenarios {
+  margin-top: 16px;
+  margin-bottom: 48px;
+}
+
+.scenarios-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.scenario-card {
+  padding: 16px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.scenario-card:hover {
+  background: var(--accent-faint);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.scenario-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.scenario-label {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.scenario-tools {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-dim);
+}
+.empty-state p {
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.empty-state .suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.empty-state .suggestion {
+  font-size: 13px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.empty-state .suggestion:hover {
+  background: var(--accent-light);
+}
+
+/* ── Smart Search Toggle ── */
+.smart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  margin-left: 12px;
+  transition: all 0.15s;
+  user-select: none;
+  vertical-align: middle;
+}
+.smart-toggle:hover { border-color: var(--text-faint); }
+.smart-toggle.active {
+  background: var(--indigo);
+  color: #fff;
+  border-color: var(--indigo);
+}
+.smart-toggle .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-faint);
+  transition: background 0.15s;
+}
+.smart-toggle.active .dot { background: #fff; }
+
+.smart-loading {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-dim);
+  font-size: 13px;
+  display: none;
+}
+.smart-loading.visible { display: block; }
+
+.smart-relevance {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-dim);
+  margin-top: 4px;
+  padding: 0 2px;
+}
+
+/* ── Workbench Panel ── */
+.wb-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,26,0.3);
+  z-index: 300;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+.wb-overlay.open { opacity: 1; visibility: visible; }
+[data-theme="dark"] .wb-overlay { background: rgba(0,0,0,0.5); }
+
+.wb-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(560px, 100vw);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  z-index: 301;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+.wb-panel.open { transform: translateX(0); }
+
+.wb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.wb-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+.wb-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-dim);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+.wb-close:hover { background: var(--bg-hover); color: var(--text); }
+
+.wb-modes {
+  display: flex;
+  gap: 4px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+.wb-mode {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wb-mode:hover { background: var(--bg-hover); }
+.wb-mode.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.wb-refs {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  min-height: 52px;
+}
+.wb-refs-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.wb-refs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.wb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: var(--accent-faint);
+  border: 1px solid var(--accent-light);
+  border-radius: 12px;
+  color: var(--accent);
+}
+.wb-chip-x {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-left: 2px;
+}
+.wb-chip-x:hover { color: var(--accent); }
+.wb-add-ref {
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  transition: all 0.15s;
+}
+.wb-add-ref:hover { background: var(--accent-faint); border-color: var(--accent); }
+
+.wb-refs.drop-target {
+  background: var(--accent-faint);
+  border-color: var(--accent);
+  border-bottom-style: dashed;
+}
+
+.wb-chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wb-msg {
+  max-width: 90%;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.wb-msg.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.wb-msg.assistant {
+  align-self: flex-start;
+  background: var(--bg-hover);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.wb-msg.assistant code {
+  background: var(--bg-active);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.wb-msg.assistant pre {
+  background: var(--bg-active);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin: 8px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  white-space: pre;
+}
+.wb-typing {
+  align-self: flex-start;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-style: italic;
+}
+.wb-typing::after {
+  content: '';
+  animation: dots 1.5s infinite;
+}
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+.wb-input-area {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.wb-input {
+  flex: 1;
+  padding: 10px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  resize: none;
+  min-height: 40px;
+  max-height: 100px;
+}
+.wb-input:focus { border-color: var(--accent); }
+.wb-send {
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.wb-send:hover { background: var(--accent-hover); }
+.wb-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.wb-output {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.wb-output-content {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+.wb-output-actions {
+  display: flex;
+  gap: 8px;
+}
+.wb-output-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+.wb-output-btn:hover { background: var(--bg-hover); }
+.wb-output-btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.wb-output-btn.primary:hover { background: var(--accent-hover); }
+
+/* ── Drag indicators ── */
+.card.dragging { opacity: 0.5; }
+
+/* ── Ref search modal ── */
+.wb-ref-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, 90vw);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 310;
+  padding: 16px;
+  display: none;
+}
+.wb-ref-modal.open { display: block; }
+.wb-ref-modal input {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  margin-bottom: 10px;
+}
+.wb-ref-modal input:focus { border-color: var(--accent); }
+.wb-ref-results {
+  max-height: 250px;
+  overflow-y: auto;
+}
+.wb-ref-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+.wb-ref-item:hover { background: var(--bg-hover); }
+.wb-ref-item-cmd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .main { padding: 20px 16px; }
+  .search-prompt { font-size: 18px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .scenario-grid { grid-template-columns: 1fr 1fr; }
+  .detail-panel { width: 100vw; }
+  .wb-panel { width: 100vw; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="topbar-nav">Sessions</a>
+    <span class="topbar-title">Registry</span>
+  </div>
+  <div class="topbar-right">
+    <button class="wb-open-btn" onclick="openWorkbench('create')" style="padding:5px 12px;font-size:12px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">+ Create</button>
+    <span style="font-size:12px;color:var(--text-faint)">
+      <span class="kbd-hint">/</span> search
+      <span class="kbd-hint" style="margin-left:8px">Esc</span> close
+    </span>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+      <span id="theme-icon">&#9790;</span>
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="search-section">
+    <div class="search-prompt">What do you want to do?</div>
+    <div class="search-bar">
+      <span class="search-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" id="search-input" placeholder='Try "find leads on Instagram" or "audit SEO"' autocomplete="off" />
+      <span class="search-kbd" id="search-kbd">/</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;margin-top:10px;gap:8px">
+      <div class="result-count" id="result-count"></div>
+      <span class="smart-toggle" id="smart-toggle" onclick="toggleSmartSearch()">
+        <span class="dot"></span> Smart Search
+      </span>
+    </div>
+    <div class="smart-loading" id="smart-loading">Asking Claude to find the best tools...</div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="card-grid" id="card-grid"></div>
+
+  <div class="empty-state" id="empty-state" style="display:none">
+    <p>No tools match that query.</p>
+    <p style="font-size:13px;margin-bottom:16px">Try describing what you want to accomplish:</p>
+    <div class="suggestions">
+      <span class="suggestion" onclick="setSearch('find leads')">find leads</span>
+      <span class="suggestion" onclick="setSearch('analyze competitors')">analyze competitors</span>
+      <span class="suggestion" onclick="setSearch('scrape a website')">scrape a website</span>
+      <span class="suggestion" onclick="setSearch('create a landing page')">create a landing page</span>
+      <span class="suggestion" onclick="setSearch('check SEO rankings')">check SEO rankings</span>
+    </div>
+  </div>
+
+  <div class="scenarios" id="scenarios-section">
+    <div class="scenarios-title">Browse by Use Case</div>
+    <div class="scenario-grid" id="scenario-grid"></div>
+  </div>
+</div>
+
+<!-- Detail Panel -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detail-panel">
+  <button class="detail-close" onclick="closeDetail()" title="Close (Esc)">&#10005;</button>
+  <div id="detail-content"></div>
+</div>
+
+<!-- Workbench Panel -->
+<div class="wb-overlay" id="wb-overlay" onclick="closeWorkbench()"></div>
+<div class="wb-panel" id="wb-panel">
+  <div class="wb-header">
+    <span class="wb-title">Skill Planner</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="wb-close" onclick="wbClearConversation()" title="Clear conversation" style="font-size:13px">Clear</button>
+      <button class="wb-close" onclick="closeWorkbench()" title="Close">&#10005;</button>
+    </div>
+  </div>
+  <div class="wb-modes" id="wb-modes">
+    <span class="wb-mode active" data-mode="create" onclick="setWbMode('create')">Create</span>
+    <span class="wb-mode" data-mode="modify" onclick="setWbMode('modify')">Modify</span>
+    <span class="wb-mode" data-mode="explain" onclick="setWbMode('explain')">Explain</span>
+    <span class="wb-mode" data-mode="enrich" onclick="setWbMode('enrich')">Enrich</span>
+  </div>
+  <div class="wb-refs" id="wb-refs" ondragover="wbDragOver(event)" ondragleave="wbDragLeave(event)" ondrop="wbDrop(event)">
+    <div class="wb-refs-label">Referenced Skills</div>
+    <div class="wb-refs-chips" id="wb-refs-chips">
+      <span class="wb-add-ref" onclick="openRefModal()">+ Add from catalog</span>
+    </div>
+  </div>
+  <div class="wb-chat" id="wb-chat">
+    <div class="wb-msg assistant">Welcome to the Skill Planner. I'll help you think through what you want to build, then produce a brief you can paste into a Claude Code session with /skill-creator to execute it. What do you have in mind?</div>
+  </div>
+  <div class="wb-input-area">
+    <textarea class="wb-input" id="wb-input" placeholder="What skill do you want to create or modify?" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();wbSend()}"></textarea>
+    <button class="wb-send" id="wb-send" onclick="wbSend()">Send</button>
+  </div>
+  <div class="wb-output" id="wb-output" style="display:none">
+    <div class="wb-output-content" id="wb-output-content"></div>
+    <div class="wb-output-actions">
+      <button class="wb-output-btn primary" onclick="wbCopyOutput()">Copy to Clipboard</button>
+      <button class="wb-output-btn" onclick="wbRefine()">Refine</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ref Search Modal -->
+<div class="wb-ref-modal" id="wb-ref-modal">
+  <input type="text" id="wb-ref-search" placeholder="Search skills to reference..." oninput="wbRefSearch()" autocomplete="off" />
+  <div class="wb-ref-results" id="wb-ref-results"></div>
+</div>
+
+<script>
+// ── Static catalog entries (MCP, CLI, hooks, plugins) ──
+const STATIC_ENTRIES = [
+  // MCP Integrations
+  { id:'notion', name:'Notion', command:'(ask Claude)', type:'mcp', category:'mcp', description:'Search, create/update pages, create databases/views, manage comments, move/duplicate pages.', useCases:['manage docs and notes','create a Notion page','search my workspace','organize project docs'], tags:['notion','docs','pages','databases','workspace'], related:[], source:'mcp' },
+  { id:'canva', name:'Canva', command:'(ask Claude)', type:'mcp', category:'mcp', description:'Generate designs, search/export designs, manage folders, edit designs, comment, upload assets, list brand kits.', useCases:['design something in Canva','create a social media graphic','export a design','manage brand assets'], tags:['canva','design','graphics','brand','export'], related:['frontend-design'], source:'mcp' },
+  { id:'gamma', name:'Gamma', command:'(ask Claude)', type:'mcp', category:'mcp', description:'Generate AI presentations, documents, and webpages. Create only \u2014 cannot edit existing.', useCases:['make a presentation','create a slide deck','generate a document','build a webpage with Gamma'], tags:['gamma','presentations','slides','documents','webpages'], related:['canva','frontend-design'], source:'mcp' },
+  { id:'calendly', name:'Calendly', command:'(ask Claude)', type:'mcp', category:'mcp', description:'Manage event types, availability, meetings, scheduling links, and organization.', useCases:['schedule a meeting','check my availability','create a scheduling link','manage calendar events'], tags:['calendly','scheduling','meetings','calendar','availability'], related:['outlook'], source:'mcp' },
+  { id:'outlook', name:'Outlook', command:'(ask Claude)', type:'mcp', category:'mcp', description:'Send/draft emails, create contacts, calendar events, email rules, manage attachments.', useCases:['send an email','draft a message','create a calendar event','manage contacts'], tags:['outlook','email','calendar','contacts','microsoft'], related:['calendly'], source:'mcp' },
+  { id:'meta-ads', name:'Meta Ads', command:'(ask Claude)', type:'mcp', category:'mcp', description:'Full campaign management \u2014 create/update/duplicate campaigns, ad sets, ads, creatives, audience targeting, insights, lead gen forms, image/video uploads.', useCases:['manage Facebook ads','create an ad campaign','check ad performance','upload ad creative','target audiences'], tags:['meta','facebook','instagram','ads','campaigns','targeting','insights'], related:['fb-ads'], source:'mcp' },
+  { id:'image-gen', name:'Image Generator', command:'(ask Claude)', type:'mcp', category:'mcp', description:'Generate images via AI (nano-banana-pro).', useCases:['generate an image','create AI artwork','make a picture'], tags:['image','generate','ai','art'], related:['algorithmic-art','canva'], source:'mcp' },
+
+  // CLI Commands
+  { id:'cli-continue', name:'Resume Session', command:'claude --continue', type:'cli', category:'cli', description:'Resume the most recent session in the current directory. Automatically picks the last-active session.', useCases:['resume where I left off','continue my last session','go back to what I was working on'], tags:['session','resume','continue'], related:['cli-resume','cli-fork'], source:'builtin' },
+  { id:'cli-resume', name:'Resume Specific Session', command:'claude --resume <id>', type:'cli', category:'cli', description:'Resume a specific session by its ID. Get IDs from claude-sessions --verbose.', useCases:['resume a specific session','go back to a particular conversation'], tags:['session','resume','specific','id'], related:['cli-continue','cli-sessions','cli-fork'], source:'builtin' },
+  { id:'cli-fork', name:'Fork Session', command:'claude --continue --fork-session', type:'cli', category:'cli', description:'Fork a session \u2014 creates a new session with full conversation history, but the original stays untouched. Great for branching experiments.', useCases:['fork a session to a new tab','branch off from a conversation','duplicate a session','experiment without losing original'], tags:['session','fork','branch','duplicate','experiment'], related:['cli-continue','cli-resume'], source:'builtin' },
+  { id:'cli-sessions', name:'List Sessions', command:'claude-sessions --verbose', type:'cli', category:'cli', description:'List all sessions with their IDs. Use to grab session IDs for --resume or --fork-session.', useCases:['find a session ID','list my sessions','see all past conversations'], tags:['session','list','history','ids'], related:['cli-resume','cli-fork'], source:'builtin' },
+  { id:'cli-print', name:'Print Mode', command:'claude -p "prompt"', type:'cli', category:'cli', description:'Non-interactive mode \u2014 sends prompt, prints response, and exits. Great for scripting and automation.', useCases:['run a one-off prompt','script Claude into a pipeline','get a quick answer without a session'], tags:['print','scripting','automation','non-interactive','pipe'], related:[], source:'builtin' },
+  { id:'cli-model', name:'Override Model', command:'claude --model <model>', type:'cli', category:'cli', description:'Override the default model for a session. Use model IDs like claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5.', useCases:['use a different model','switch to Haiku for speed','use Opus for complex tasks'], tags:['model','override','haiku','sonnet','opus'], related:[], source:'builtin' },
+
+  // Hooks
+  { id:'hook-auto-name', name:'Auto-Name Session', command:'(automatic)', type:'hook', category:'hooks', description:'Triggered on Stop (after 2nd response). Generates a human-readable name from your first message and saves it to session-names.json. Handles forks by detecting the fork point and naming from the first post-fork message.', useCases:['sessions get named automatically','session naming'], tags:['hook','session','naming','automatic','stop'], related:['hook-cmux-map'], source:'custom' },
+  { id:'hook-cmux-map', name:'Save cmux Mapping', command:'(automatic)', type:'hook', category:'hooks', description:'Triggered on SessionStart. Maps terminal multiplexer panel IDs to Claude session IDs so sessions can reconnect after a cmux restart. Saves workspace names and timestamps.', useCases:['session reconnection after restart','cmux integration'], tags:['hook','cmux','session','mapping','reconnect','start'], related:['hook-auto-name'], source:'custom' },
+
+  // Key plugins
+  { id:'plugin-playground', name:'Playground', command:'/playground', type:'plugin', category:'plugins', description:'Creates interactive HTML playgrounds \u2014 self-contained single-file explorers with live preview and controls.', useCases:['make an interactive tool','build a playground','create a visual configurator'], tags:['playground','interactive','html','explorer','tool'], related:['frontend-design','algorithmic-art'], source:'plugin' },
+  { id:'plugin-frontend-design', name:'Frontend Design', command:'/frontend-design', type:'plugin', category:'plugins', description:'Create distinctive, production-grade frontend interfaces with high design quality.', useCases:['build a polished web page','design a beautiful UI','create a landing page'], tags:['frontend','design','ui','web','polished'], related:['playground','algorithmic-art'], source:'plugin' },
+  { id:'plugin-code-simplifier', name:'Code Simplifier', command:'/simplify', type:'plugin', category:'plugins', description:'Review changed code for reuse, quality, and efficiency, then fix any issues found.', useCases:['clean up my code','simplify what I just wrote','review code quality'], tags:['code','review','simplify','refactor','quality'], related:[], source:'plugin' },
+  { id:'plugin-loop', name:'Loop', command:'/loop 5m /foo', type:'plugin', category:'plugins', description:'Run a prompt or slash command on a recurring interval. Defaults to every 10 minutes.', useCases:['run something on a schedule','poll for status','recurring task'], tags:['loop','schedule','interval','recurring','poll'], related:[], source:'plugin' },
+  { id:'plugin-claude-api', name:'Claude API Helper', command:'/claude-api', type:'plugin', category:'plugins', description:'Build apps with the Claude API, Anthropic SDK, or Agent SDK.', useCases:['build with the Claude API','use the Anthropic SDK','create an AI agent'], tags:['api','sdk','anthropic','claude','agent','development'], related:[], source:'plugin' },
+  { id:'plugin-update-config', name:'Update Config', command:'/update-config', type:'plugin', category:'plugins', description:'Configure Claude Code settings, hooks, permissions, and environment variables via settings.json.', useCases:['change Claude Code settings','add a permission','configure hooks','set environment variables'], tags:['config','settings','permissions','hooks','env'], related:[], source:'plugin' },
+  { id:'plugin-keybindings', name:'Keybindings', command:'/keybindings-help', type:'plugin', category:'plugins', description:'Customize keyboard shortcuts, rebind keys, add chord bindings.', useCases:['customize keyboard shortcuts','rebind a key','change keybindings'], tags:['keybindings','keyboard','shortcuts','keys'], related:['plugin-update-config'], source:'plugin' },
+];
+
+// ── Scenarios ──
+const SCENARIOS = [
+  { icon:'\ud83d\udd0d', label:'Research a Company', query:'research a company', tools:['scout','linkedin-companies','web-crawl','competitor-intel'] },
+  { icon:'\ud83c\udfaf', label:'Generate Leads', query:'find leads', tools:['lead-gen','ig-search','contact-scrape','gmaps-scrape'] },
+  { icon:'\ud83d\udcca', label:'Analyze Competitors', query:'analyze competitors', tools:['competitor-intel','fb-ads','gmaps-reviews','google-serp'] },
+  { icon:'\ud83d\udcf1', label:'Audit Social Media', query:'analyze social media content', tools:['ig-posts','ig-reels','fb-posts','tiktok-scrape','yt-scrape'] },
+  { icon:'\ud83c\udfa8', label:'Create Content', query:'create visual content', tools:['frontend-design','canva','gamma','algorithmic-art','playground'] },
+  { icon:'\ud83d\udce7', label:'Find Contact Info', query:'find email and phone', tools:['contact-scrape','fb-pages','linkedin-profiles'] },
+  { icon:'\u2b50', label:'Analyze Reviews', query:'analyze customer reviews', tools:['gmaps-reviews','yelp-reviews'] },
+  { icon:'\ud83d\udcc8', label:'Check SEO', query:'check SEO rankings', tools:['google-serp','screaming-frog-cli','web-crawl'] },
+  { icon:'\ud83c\udfac', label:'Get Video Transcripts', query:'transcribe a video', tools:['ig-transcript','yt-transcript'] },
+  { icon:'\ud83d\udcc5', label:'Manage Schedule', query:'schedule meetings', tools:['calendly','outlook'] },
+  { icon:'\ud83d\udd04', label:'Resume a Session', query:'resume session', tools:['cli-continue','cli-resume','cli-fork','cli-sessions'] },
+  { icon:'\ud83d\udee0\ufe0f', label:'Configure Claude Code', query:'change settings', tools:['plugin-update-config','plugin-keybindings'] },
+];
+
+// ── Synonyms ──
+const SYNONYMS = {
+  leads: ['prospects','clients','customers','contacts','outreach'],
+  spy: ['competitor','competitive','intel','research','monitor'],
+  scrape: ['extract','pull','get','grab','collect','crawl'],
+  reviews: ['feedback','ratings','sentiment','reputation','opinions'],
+  seo: ['search engine','ranking','serp','google','visibility'],
+  design: ['build','create','make','ui','frontend','interface','page'],
+  automate: ['workflow','automation','hook','trigger','schedule','recurring'],
+  email: ['contact','mail','message','send','draft'],
+  video: ['reel','reels','clip','youtube','tiktok'],
+  transcript: ['transcribe','captions','speech','audio','what they said'],
+  presentation: ['slides','deck','pitch','document'],
+  ads: ['advertising','campaigns','ad creative','ad library','promote'],
+  session: ['resume','continue','fork','history','conversation'],
+  instagram: ['ig','insta'],
+  facebook: ['fb','meta'],
+  tiktok: ['tt'],
+  youtube: ['yt'],
+  linkedin: ['li'],
+};
+
+// ── SVG Icon System ──
+const SVG = (path, size=18) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+
+const ICONS = {
+  instagram: SVG('<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/>'),
+  facebook: SVG('<path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/>'),
+  twitter: SVG('<path d="M4 4l11.733 16h4.267l-11.733-16zM4 20l6.768-6.768M13.232 10.232L20 4"/>'),
+  tiktok: SVG('<path d="M9 12a4 4 0 104 4V4a5 5 0 005 5"/>'),
+  youtube: SVG('<path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.4 19.6C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 001.94-2A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98" fill="currentColor" stroke="none"/>'),
+  reddit: SVG('<circle cx="12" cy="12" r="10"/><path d="M14.5 14.5c-1.5 1-3.5 1-5 0"/><circle cx="9" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/><path d="M18 8l2-2M18 8a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>'),
+  linkedin: SVG('<path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>'),
+  google: SVG('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
+  notion: SVG('<path d="M4 4h16v16H4z"/><path d="M9 4v16"/><path d="M4 9h5"/><path d="M4 14h5"/>'),
+  canva: SVG('<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/>'),
+  gamma: SVG('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 17l3-6 3 4 2-2 2 4"/>'),
+  calendly: SVG('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+  outlook: SVG('<rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 4 12 13 2 4"/>'),
+  meta: SVG('<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>'),
+  image: SVG('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'),
+  session: SVG('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>'),
+  config: SVG('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>'),
+  hook: SVG('<path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>'),
+  plugin: SVG('<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>'),
+  web: SVG('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>'),
+  seo: SVG('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'),
+  leads: SVG('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
+  local: SVG('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>'),
+  art: SVG('<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>'),
+  realestate: SVG('<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+  code: SVG('<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>'),
+  bolt: SVG('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/>'),
+  terminal: SVG('<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>'),
+  puzzle: SVG('<path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 01-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 10-3.214 3.214c.446.166.855.497.925.968a.979.979 0 01-.276.837l-1.61 1.61a2.404 2.404 0 01-1.705.707 2.402 2.402 0 01-1.704-.706l-1.568-1.568a1.026 1.026 0 00-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 11-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 00-.289-.877l-1.568-1.568A2.402 2.402 0 011.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 103.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0112 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 113.237 3.237c-.464.18-.894.527-.967 1.02z"/>'),
+  default: SVG('<path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>'),
+};
+
+// Scenario-specific icons
+const SCENARIO_ICONS = {
+  'Research a Company': SVG('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>', 24),
+  'Generate Leads': SVG('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>', 24),
+  'Analyze Competitors': SVG('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>', 24),
+  'Audit Social Media': SVG('<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/>', 24),
+  'Create Content': SVG('<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>', 24),
+  'Find Contact Info': SVG('<rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 4 12 13 2 4"/>', 24),
+  'Analyze Reviews': SVG('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', 24),
+  'Check SEO': SVG('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>', 24),
+  'Get Video Transcripts': SVG('<polygon points="5 3 19 12 5 21 5 3"/>', 24),
+  'Manage Schedule': SVG('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>', 24),
+  'Resume a Session': SVG('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>', 24),
+  'Configure Claude Code': SVG('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09"/>', 24),
+};
+
+function getIcon(item) {
+  const sub = item.subcategory;
+  const id = item.id.toLowerCase();
+  // Platform match
+  if (sub && ICONS[sub]) return ICONS[sub];
+  for (const key of ['instagram','facebook','twitter','tiktok','youtube','reddit','linkedin','google']) {
+    if (id.includes(key)) return ICONS[key];
+  }
+  // Type match
+  if (item.type === 'mcp') return ICONS[item.id] || ICONS.plugin;
+  if (item.type === 'cli') return ICONS.terminal;
+  if (item.type === 'hook') return ICONS.hook;
+  if (item.type === 'plugin') return ICONS.puzzle;
+  // Category match
+  if (item.category === 'lead-gen') return ICONS.leads;
+  if (item.category === 'local') return ICONS.local;
+  if (item.category === 'seo') return ICONS.seo;
+  if (item.category === 'web') return ICONS.web;
+  if (item.category === 'content') return ICONS.art;
+  if (item.id.includes('render') || item.id.includes('home')) return ICONS.realestate;
+  return ICONS.default;
+}
+
+function getScenarioIcon(label) {
+  return SCENARIO_ICONS[label] || ICONS.default;
+}
+
+// ── State ──
+let allItems = [];
+let filteredItems = [];
+let activeFilters = new Set();
+let focusedCardIndex = -1;
+let detailOpen = false;
+
+// ── Category config ──
+const CATEGORIES = {
+  'social-media': { label: 'Social Media', order: 0 },
+  'lead-gen':     { label: 'Lead Gen', order: 1 },
+  'local':        { label: 'Local/Maps', order: 2 },
+  'seo':          { label: 'SEO', order: 3 },
+  'web':          { label: 'Web', order: 4 },
+  'content':      { label: 'Content', order: 5 },
+  'dev':          { label: 'Dev Tools', order: 6 },
+  'mcp':          { label: 'Integrations', order: 7 },
+  'cli':          { label: 'CLI', order: 8 },
+  'hooks':        { label: 'Hooks', order: 9 },
+  'plugins':      { label: 'Plugins', order: 10 },
+  'uncategorized':{ label: 'Other', order: 11 },
+};
+
+// ── Search Engine ──
+class SearchEngine {
+  constructor(items) {
+    this.items = items;
+  }
+
+  expandQuery(tokens) {
+    const expanded = new Set(tokens);
+    for (const token of tokens) {
+      // Direct synonym match
+      if (SYNONYMS[token]) {
+        SYNONYMS[token].forEach(s => expanded.add(s));
+      }
+      // Reverse synonym match
+      for (const [key, syns] of Object.entries(SYNONYMS)) {
+        if (syns.includes(token)) expanded.add(key);
+      }
+    }
+    return [...expanded];
+  }
+
+  tokenize(text) {
+    return text.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(t => t.length > 1);
+  }
+
+  search(query) {
+    if (!query.trim()) return this.items;
+
+    const rawTokens = this.tokenize(query);
+    if (rawTokens.length === 0) return this.items;
+
+    const expandedTokens = this.expandQuery(rawTokens);
+
+    const scored = this.items.map(item => {
+      let score = 0;
+
+      // Tier 1: Exact match on command/id (weight 1.0)
+      const cmd = (item.command || '').toLowerCase();
+      const id = (item.id || '').toLowerCase();
+      const qLower = query.toLowerCase().replace('/', '');
+      if (cmd.includes(query.toLowerCase()) || id.includes(qLower)) {
+        score += 10;
+      }
+
+      // Tier 2: Tag and keyword match (weight 0.8)
+      const allText = [
+        item.name, item.description, item.category, item.subcategory || '',
+        ...(item.tags || [])
+      ].join(' ').toLowerCase();
+
+      for (const token of expandedTokens) {
+        if (allText.includes(token)) score += 0.8;
+      }
+
+      // Tier 3: Use case intent match (weight 0.7)
+      for (const useCase of (item.useCases || [])) {
+        const ucLower = useCase.toLowerCase();
+        let matchCount = 0;
+        for (const token of expandedTokens) {
+          if (ucLower.includes(token)) matchCount++;
+        }
+        const overlap = matchCount / Math.max(rawTokens.length, 1);
+        score += overlap * 3.5; // boost use case matches
+      }
+
+      return { item, score };
+    });
+
+    return scored
+      .filter(s => s.score > 0.5)
+      .sort((a, b) => b.score - a.score)
+      .map(s => s.item);
+  }
+}
+
+let searchEngine;
+
+// ── Rendering ──
+
+function renderFilters() {
+  const el = document.getElementById('filters');
+  const counts = {};
+  allItems.forEach(item => {
+    const cat = item.category || 'uncategorized';
+    counts[cat] = (counts[cat] || 0) + 1;
+  });
+
+  const allPill = document.createElement('span');
+  allPill.className = 'pill' + (activeFilters.size === 0 ? ' active' : '');
+  allPill.textContent = `All`;
+  allPill.onclick = () => { activeFilters.clear(); applyFilters(); };
+  el.appendChild(allPill);
+
+  const sortedCats = Object.entries(counts).sort((a, b) =>
+    (CATEGORIES[a[0]]?.order ?? 99) - (CATEGORIES[b[0]]?.order ?? 99)
+  );
+
+  for (const [cat, count] of sortedCats) {
+    const pill = document.createElement('span');
+    pill.className = 'pill' + (activeFilters.has(cat) ? ' active' : '');
+    pill.innerHTML = `${CATEGORIES[cat]?.label || cat}<span class="count">${count}</span>`;
+    pill.onclick = () => {
+      if (activeFilters.has(cat)) activeFilters.delete(cat);
+      else activeFilters.add(cat);
+      applyFilters();
+    };
+    el.appendChild(pill);
+  }
+}
+
+function renderCards(items) {
+  const grid = document.getElementById('card-grid');
+  const empty = document.getElementById('empty-state');
+  const scenarios = document.getElementById('scenarios-section');
+  const resultCount = document.getElementById('result-count');
+  grid.innerHTML = '';
+  focusedCardIndex = -1;
+
+  const query = document.getElementById('search-input').value.trim();
+
+  if (items.length === 0 && query) {
+    empty.style.display = 'block';
+    scenarios.style.display = 'none';
+    resultCount.textContent = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+  scenarios.style.display = query ? 'none' : 'block';
+
+  if (query || activeFilters.size > 0) {
+    resultCount.textContent = `${items.length} tool${items.length !== 1 ? 's' : ''} found`;
+  } else {
+    resultCount.textContent = `${items.length} tools available`;
+  }
+
+  items.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.type = item.type;
+    card.dataset.index = idx;
+    card.draggable = true;
+    card.ondragstart = (e) => { e.dataTransfer.setData('text/plain', item.id); card.classList.add('dragging'); };
+    card.ondragend = () => card.classList.remove('dragging');
+    card.onclick = (e) => {
+      if (e.target.closest('.copy-btn')) return;
+      openDetail(item);
+    };
+
+    const icon = getIcon(item);
+    const tags = (item.tags || []).slice(0, 3);
+
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-icon">${icon}</span>
+        <span class="card-name">${escHtml(item.name)}</span>
+        <span class="type-badge" data-type="${item.type}">${item.type}</span>
+      </div>
+      <div class="card-command">${escHtml(item.command)}</div>
+      <div class="card-desc">${escHtml(item.description)}</div>
+      <div class="card-footer">
+        <div class="card-tags">${tags.map(t => `<span class="tag">${escHtml(t)}</span>`).join('')}</div>
+        ${item.command && item.command !== '(automatic)' && item.command !== '(ask Claude)' ? `<button class="copy-btn" onclick="copyCommand(this, '${escAttr(item.command)}')" title="Copy command">copy</button>` : ''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderScenarios() {
+  const grid = document.getElementById('scenario-grid');
+  SCENARIOS.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'scenario-card';
+    card.onclick = () => setSearch(s.query);
+    card.innerHTML = `
+      <div class="scenario-icon">${s.icon}</div>
+      <div class="scenario-label">${s.label}</div>
+      <div class="scenario-tools">${s.tools.length} tools</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function openDetail(item) {
+  detailOpen = true;
+  const panel = document.getElementById('detail-panel');
+  const overlay = document.getElementById('detail-overlay');
+  const content = document.getElementById('detail-content');
+
+  const typeColor = `var(--type-${item.type})`;
+  const icon = getIcon(item);
+  const useCases = (item.useCases || []).map(u => `<li>${escHtml(u)}</li>`).join('');
+  const tags = (item.tags || []).map(t => `<span class="tag">${escHtml(t)}</span>`).join('');
+  const related = (item.related || []).map(r => {
+    const rel = allItems.find(i => i.id === r);
+    return rel ? `<span class="related-link" onclick="event.stopPropagation(); openDetail(allItems.find(i=>i.id==='${r}'))">${escHtml(rel.command || '/' + rel.id)}</span>` : '';
+  }).filter(Boolean).join('');
+
+  content.innerHTML = `
+    <div class="detail-type-bar" style="background:${typeColor}"></div>
+    <div style="font-size:32px;margin-bottom:12px">${icon}</div>
+    <div class="detail-name">${escHtml(item.name)}</div>
+    <div class="detail-command">
+      <span>${escHtml(item.command)}</span>
+      ${item.command && item.command !== '(automatic)' && item.command !== '(ask Claude)' ? `<button class="copy-btn" onclick="copyCommand(this, '${escAttr(item.command)}')" title="Copy command">copy</button>` : ''}
+    </div>
+    <div class="detail-source">${escHtml(item.source)} &middot; ${escHtml(item.type)}</div>
+    <div class="detail-desc">${escHtml(item.description)}</div>
+
+    ${useCases ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Use this when you want to...</div>
+      <ul class="detail-use-cases">${useCases}</ul>
+    </div>` : ''}
+
+    ${tags ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Tags</div>
+      <div class="detail-tags">${tags}</div>
+    </div>` : ''}
+
+    ${related ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Related Tools</div>
+      <div class="detail-related">${related}</div>
+    </div>` : ''}
+
+    ${item.type === 'skill' || item.type === 'command' ? `
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <button class="wb-output-btn" onclick="closeDetail();openWorkbench('modify','${item.id}')" style="width:100%;text-align:center">Modify this skill</button>
+    </div>` : ''}
+  `;
+
+  panel.classList.add('open');
+  overlay.classList.add('open');
+}
+
+function closeDetail() {
+  detailOpen = false;
+  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('detail-overlay').classList.remove('open');
+}
+
+// ── Helpers ──
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(s) {
+  return s.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+function copyCommand(btn, cmd) {
+  navigator.clipboard.writeText(cmd).then(() => {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'copy';
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+function setSearch(query) {
+  const input = document.getElementById('search-input');
+  input.value = query;
+  input.focus();
+  applyFilters();
+}
+
+function applyFilters() {
+  const query = document.getElementById('search-input').value.trim();
+  let items = query ? searchEngine.search(query) : [...allItems];
+
+  if (activeFilters.size > 0) {
+    items = items.filter(i => activeFilters.has(i.category));
+  }
+
+  filteredItems = items;
+  renderFiltersUI();
+  renderCards(items);
+}
+
+function renderFiltersUI() {
+  const el = document.getElementById('filters');
+  el.innerHTML = '';
+  renderFilters();
+}
+
+// ── Theme ──
+
+function getPreferredTheme() {
+  const stored = localStorage.getItem('registry-theme');
+  if (stored) return stored;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-icon').innerHTML = theme === 'dark' ? '&#9788;' : '&#9790;';
+  localStorage.setItem('registry-theme', theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// ── Keyboard Navigation ──
+
+document.addEventListener('keydown', (e) => {
+  // "/" focuses search (unless already typing)
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+    return;
+  }
+
+  // Esc closes panels
+  if (e.key === 'Escape') {
+    if (wbOpen) {
+      closeWorkbench();
+    } else if (detailOpen) {
+      closeDetail();
+    } else {
+      document.getElementById('search-input').blur();
+    }
+    return;
+  }
+
+  // Arrow key navigation on cards
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (document.activeElement.tagName === 'INPUT') return;
+    e.preventDefault();
+    const cards = document.querySelectorAll('.card');
+    if (cards.length === 0) return;
+
+    // Remove current focus
+    cards.forEach(c => c.classList.remove('focused'));
+
+    if (e.key === 'ArrowDown') {
+      focusedCardIndex = Math.min(focusedCardIndex + 1, cards.length - 1);
+    } else {
+      focusedCardIndex = Math.max(focusedCardIndex - 1, 0);
+    }
+
+    cards[focusedCardIndex].classList.add('focused');
+    cards[focusedCardIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  // Enter opens focused card
+  if (e.key === 'Enter' && focusedCardIndex >= 0 && !detailOpen) {
+    if (document.activeElement.tagName === 'INPUT') return;
+    const item = filteredItems[focusedCardIndex];
+    if (item) openDetail(item);
+  }
+});
+
+// ── Search input handling ──
+
+document.getElementById('search-input').addEventListener('input', debounce(() => {
+  applyFilters();
+}, 150));
+
+// Smart search on Enter
+document.getElementById('search-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && smartSearchEnabled) {
+    e.preventDefault();
+    const q = document.getElementById('search-input').value.trim();
+    if (q) runSmartSearch(q);
+  }
+});
+
+document.getElementById('search-input').addEventListener('focus', () => {
+  document.getElementById('search-kbd').style.display = 'none';
+});
+document.getElementById('search-input').addEventListener('blur', () => {
+  if (!document.getElementById('search-input').value) {
+    document.getElementById('search-kbd').style.display = 'block';
+  }
+});
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// ── Smart Search ──
+
+let smartSearchEnabled = false;
+let smartSearchPending = false;
+
+function toggleSmartSearch() {
+  smartSearchEnabled = !smartSearchEnabled;
+  document.getElementById('smart-toggle').classList.toggle('active', smartSearchEnabled);
+}
+
+async function runSmartSearch(query) {
+  if (!smartSearchEnabled || !query.trim() || smartSearchPending) return;
+  smartSearchPending = true;
+  const loadEl = document.getElementById('smart-loading');
+  loadEl.classList.add('visible');
+
+  try {
+    const resp = await fetch('/api/smart-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    if (!resp.ok) throw new Error('Server error');
+    const data = await resp.json();
+    if (data.error) throw new Error(data.message || data.error);
+
+    // Render smart results
+    const results = data.results || [];
+    const smartItems = results.map(r => {
+      const item = allItems.find(i => i.id === r.id);
+      return item ? { ...item, _relevance: r.relevance } : null;
+    }).filter(Boolean);
+
+    if (smartItems.length > 0) {
+      renderCards(smartItems);
+      document.getElementById('result-count').textContent = `${smartItems.length} smart results`;
+    }
+  } catch (e) {
+    // Silently fall back to keyword search
+    console.warn('Smart search failed:', e);
+  } finally {
+    smartSearchPending = false;
+    loadEl.classList.remove('visible');
+  }
+}
+
+// ── Workbench State ──
+
+let wbOpen = false;
+let wbMode = 'create';
+let wbReferencedSkills = [];
+let wbMessages = [];
+let wbOutputContent = '';
+let wbSending = false;
+
+function saveWbState() {
+  localStorage.setItem('skill-workbench-state', JSON.stringify({
+    mode: wbMode,
+    referencedSkills: wbReferencedSkills,
+    messages: wbMessages,
+    outputContent: wbOutputContent,
+  }));
+}
+
+function loadWbState() {
+  try {
+    const s = JSON.parse(localStorage.getItem('skill-workbench-state'));
+    if (s) {
+      wbMode = s.mode || 'create';
+      wbReferencedSkills = s.referencedSkills || [];
+      wbMessages = s.messages || [];
+      wbOutputContent = s.outputContent || '';
+    }
+  } catch (e) {}
+}
+
+function openWorkbench(mode, skillId) {
+  wbOpen = true;
+  if (mode) setWbMode(mode);
+  if (skillId && !wbReferencedSkills.includes(skillId)) {
+    wbReferencedSkills.push(skillId);
+  }
+  renderWb();
+  document.getElementById('wb-panel').classList.add('open');
+  document.getElementById('wb-overlay').classList.add('open');
+  saveWbState();
+}
+
+function closeWorkbench() {
+  wbOpen = false;
+  document.getElementById('wb-panel').classList.remove('open');
+  document.getElementById('wb-overlay').classList.remove('open');
+  closeRefModal();
+}
+
+function setWbMode(mode) {
+  wbMode = mode;
+  document.querySelectorAll('.wb-mode').forEach(m => m.classList.toggle('active', m.dataset.mode === mode));
+  saveWbState();
+}
+
+function renderWb() {
+  // Render mode tabs
+  document.querySelectorAll('.wb-mode').forEach(m => m.classList.toggle('active', m.dataset.mode === wbMode));
+
+  // Render referenced skills
+  const chips = document.getElementById('wb-refs-chips');
+  chips.innerHTML = '';
+  wbReferencedSkills.forEach(id => {
+    const item = allItems.find(i => i.id === id);
+    const chip = document.createElement('span');
+    chip.className = 'wb-chip';
+    chip.innerHTML = `${item ? item.command || '/' + id : '/' + id}<span class="wb-chip-x" onclick="wbRemoveRef('${id}')">&times;</span>`;
+    chips.appendChild(chip);
+  });
+  const addBtn = document.createElement('span');
+  addBtn.className = 'wb-add-ref';
+  addBtn.textContent = '+ Add';
+  addBtn.onclick = openRefModal;
+  chips.appendChild(addBtn);
+
+  // Render messages
+  const chat = document.getElementById('wb-chat');
+  chat.innerHTML = '';
+  if (wbMessages.length === 0) {
+    chat.innerHTML = '<div class="wb-msg assistant">Welcome to the Skill Planner. I\'ll help you think through what you want to build, then produce a brief you can paste into a Claude Code session with /skill-creator to execute it. What do you have in mind?</div>';
+  } else {
+    wbMessages.forEach(m => {
+      const div = document.createElement('div');
+      div.className = `wb-msg ${m.role}`;
+      div.textContent = m.content;
+      chat.appendChild(div);
+    });
+  }
+  chat.scrollTop = chat.scrollHeight;
+
+  // Render output
+  const outEl = document.getElementById('wb-output');
+  if (wbOutputContent) {
+    outEl.style.display = 'block';
+    document.getElementById('wb-output-content').textContent = wbOutputContent;
+  } else {
+    outEl.style.display = 'none';
+  }
+}
+
+async function wbSend(overrideText) {
+  const input = document.getElementById('wb-input');
+  const text = overrideText || input.value.trim();
+  if (!text || wbSending) return;
+
+  if (!overrideText) {
+    wbMessages.push({ role: 'user', content: text });
+    input.value = '';
+  }
+  renderWb();
+
+  // Show typing indicator
+  const chat = document.getElementById('wb-chat');
+  const typing = document.createElement('div');
+  typing.className = 'wb-typing';
+  typing.textContent = 'Thinking';
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+
+  wbSending = true;
+  document.getElementById('wb-send').disabled = true;
+
+  try {
+    const resp = await fetch('/api/skill-builder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: wbMessages,
+        referencedSkills: wbReferencedSkills,
+        mode: wbMode,
+      }),
+    });
+    const data = await resp.json();
+
+    if (data.error) {
+      wbMessages.push({ role: 'assistant', content: `Error: ${data.message || data.error}. Try again.` });
+    } else {
+      wbMessages.push({ role: 'assistant', content: data.response });
+    }
+  } catch (e) {
+    wbMessages.push({ role: 'assistant', content: 'Failed to reach the server. Make sure the dashboard server is running.' });
+  } finally {
+    wbSending = false;
+    document.getElementById('wb-send').disabled = false;
+    typing.remove();
+    renderWb();
+    saveWbState();
+  }
+}
+
+async function wbGenerateOutput() {
+  const briefRequest = 'Generate the final brief now. Produce a complete, copy-ready brief I can paste as my first message in a Claude Code session using /skill-creator. Fill in all sections based on what we discussed.';
+  wbMessages.push({ role: 'user', content: briefRequest });
+  const prevMode = wbMode;
+  wbMode = 'generate-output';
+  await wbSend(briefRequest);
+  // The response is the output
+  if (wbMessages.length > 0) {
+    const lastMsg = wbMessages[wbMessages.length - 1];
+    if (lastMsg.role === 'assistant') {
+      wbOutputContent = lastMsg.content;
+    }
+  }
+  wbMode = prevMode;
+  renderWb();
+  saveWbState();
+}
+
+function wbCopyOutput() {
+  navigator.clipboard.writeText(wbOutputContent).then(() => {
+    const btn = document.querySelector('.wb-output-btn.primary');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to Clipboard', 1500);
+  });
+}
+
+function wbRefine() {
+  wbOutputContent = '';
+  renderWb();
+  document.getElementById('wb-input').value = 'I want to change ';
+  document.getElementById('wb-input').focus();
+  saveWbState();
+}
+
+function wbClearConversation() {
+  wbMessages = [];
+  wbOutputContent = '';
+  wbReferencedSkills = [];
+  renderWb();
+  saveWbState();
+}
+
+function wbRemoveRef(id) {
+  wbReferencedSkills = wbReferencedSkills.filter(r => r !== id);
+  renderWb();
+  saveWbState();
+}
+
+// Drag-and-drop onto workbench refs
+function wbDragOver(e) {
+  e.preventDefault();
+  document.getElementById('wb-refs').classList.add('drop-target');
+}
+function wbDragLeave(e) {
+  document.getElementById('wb-refs').classList.remove('drop-target');
+}
+function wbDrop(e) {
+  e.preventDefault();
+  document.getElementById('wb-refs').classList.remove('drop-target');
+  const id = e.dataTransfer.getData('text/plain');
+  if (id && !wbReferencedSkills.includes(id) && wbReferencedSkills.length < 5) {
+    wbReferencedSkills.push(id);
+    renderWb();
+    saveWbState();
+  }
+}
+
+// Ref search modal
+function openRefModal() {
+  const modal = document.getElementById('wb-ref-modal');
+  modal.classList.add('open');
+  document.getElementById('wb-ref-search').value = '';
+  document.getElementById('wb-ref-search').focus();
+  wbRefSearch();
+}
+function closeRefModal() {
+  document.getElementById('wb-ref-modal').classList.remove('open');
+}
+function wbRefSearch() {
+  const q = document.getElementById('wb-ref-search').value.trim();
+  const results = q ? searchEngine.search(q).slice(0, 10) : allItems.filter(i => i.type === 'skill' || i.type === 'command').slice(0, 10);
+  const container = document.getElementById('wb-ref-results');
+  container.innerHTML = '';
+  results.forEach(item => {
+    if (wbReferencedSkills.includes(item.id)) return;
+    const div = document.createElement('div');
+    div.className = 'wb-ref-item';
+    div.innerHTML = `<span>${getIcon(item)}</span><span>${escHtml(item.name)}</span><span class="wb-ref-item-cmd">${escHtml(item.command)}</span>`;
+    div.onclick = () => {
+      if (wbReferencedSkills.length < 5) {
+        wbReferencedSkills.push(item.id);
+        renderWb();
+        saveWbState();
+        closeRefModal();
+      }
+    };
+    container.appendChild(div);
+  });
+}
+
+// Add Generate button after 2+ conversation turns
+function maybeShowGenerateBtn() {
+  const userMsgCount = wbMessages.filter(m => m.role === 'user').length;
+  if (userMsgCount >= 2 && !wbOutputContent) {
+    const chat = document.getElementById('wb-chat');
+    const existing = chat.querySelector('.wb-generate-btn');
+    if (!existing) {
+      const btn = document.createElement('button');
+      btn.className = 'wb-output-btn primary wb-generate-btn';
+      btn.style.cssText = 'align-self:center;margin:8px 0';
+      btn.textContent = 'Generate Brief for /skill-creator';
+      btn.onclick = wbGenerateOutput;
+      chat.appendChild(btn);
+    }
+  }
+}
+
+// Override renderWb to also show generate button
+const _origRenderWb = renderWb;
+renderWb = function() {
+  _origRenderWb();
+  maybeShowGenerateBtn();
+};
+
+// ── Init ──
+
+async function init() {
+  // Apply theme
+  applyTheme(getPreferredTheme());
+
+  // Load catalog from API (with fallback to static-only)
+  let apiItems = [];
+  try {
+    const resp = await fetch('/api/catalog');
+    if (resp.ok) {
+      const data = await resp.json();
+      apiItems = data.items || [];
+    }
+  } catch (e) {
+    // Offline or no server — that's fine, use static only
+  }
+
+  // Merge: API items (scanned skills) + static entries
+  // Deduplicate by id — API items take priority for skills that also appear as plugins
+  const seen = new Set();
+  allItems = [];
+
+  for (const item of apiItems) {
+    seen.add(item.id);
+    allItems.push(item);
+  }
+
+  for (const item of STATIC_ENTRIES) {
+    // Skip plugin entries if the same skill was loaded from API
+    const baseId = item.id.replace('plugin-', '');
+    if (seen.has(baseId) && item.type === 'plugin') continue;
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    allItems.push(item);
+  }
+
+  // Sort by category order then name
+  allItems.sort((a, b) => {
+    const ca = CATEGORIES[a.category]?.order ?? 99;
+    const cb = CATEGORIES[b.category]?.order ?? 99;
+    if (ca !== cb) return ca - cb;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  filteredItems = [...allItems];
+  searchEngine = new SearchEngine(allItems);
+
+  renderFilters();
+  renderCards(allItems);
+  renderScenarios();
+
+  // Restore workbench state
+  loadWbState();
+}
+
+init();
+</script>
+</body>
+</html>
