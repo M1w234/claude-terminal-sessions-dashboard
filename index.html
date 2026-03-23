@@ -6,6 +6,7 @@
 <title>Claude Sessions</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23C45A36'/%3E%3Cpath d='M19.5 12.5c0 0-1.5-1.5-3.5-1.5s-3.5 1.5-3.5 1.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M12.5 17c0 0 1 2.5 3.5 2.5s3.5-2.5 3.5-2.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='13.5' cy='14.5' r='1' fill='%23FFF'/%3E%3Ccircle cx='18.5' cy='14.5' r='1' fill='%23FFF'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23C45A36'/%3E%3Cpath d='M90 30C56.9 30 30 56.9 30 90s26.9 60 60 60 60-26.9 60-60S123.1 30 90 30z' fill='%23F5EDE8' opacity='0.25'/%3E%3Cpath d='M110 70c0 0-8-9-20-9s-20 9-20 9' stroke='%23FFF' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M70 100c0 0 6 15 20 15s20-15 20-15' stroke='%23FFF' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='76' cy='85' r='6' fill='%23FFF'/%3E%3Ccircle cx='104' cy='85' r='6' fill='%23FFF'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -416,6 +417,70 @@
     height: 14px;
   }
 
+  .summary-panel {
+    margin: 16px 32px;
+    max-width: 900px;
+    padding: 18px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--accent-faint);
+  }
+
+  .summary-panel.loading {
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .summary-panel .summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .summary-panel .summary-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .summary-panel .summary-label svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .summary-panel .summary-refresh {
+    font-size: 11px;
+    color: var(--text-faint);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .summary-panel .summary-refresh:hover {
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .summary-panel .summary-content {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  .summary-panel .summary-content strong {
+    color: var(--text);
+  }
+
   .messages {
     padding: 24px 32px 60px;
     max-width: 900px;
@@ -709,6 +774,121 @@
     letter-spacing: 0.02em;
   }
 
+  /* ── Terminal Panel ── */
+  .app.terminal-open {
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .app.terminal-open .main {
+    overflow-y: auto;
+  }
+
+  .terminal-panel {
+    grid-column: 1 / -1;
+    border-top: 2px solid var(--accent);
+    background: #1a1a1a;
+    display: none;
+    flex-direction: column;
+    height: 320px;
+    min-height: 150px;
+    position: relative;
+  }
+
+  .app.terminal-open .terminal-panel {
+    display: flex;
+  }
+
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: #252525;
+    border-bottom: 1px solid #333;
+    cursor: ns-resize;
+    user-select: none;
+  }
+
+  .terminal-header .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .terminal-header .terminal-title .term-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .terminal-header .terminal-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .terminal-header .terminal-actions button {
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #999;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .terminal-header .terminal-actions button:hover {
+    background: #333;
+    color: #ccc;
+    border-color: #666;
+  }
+
+  .terminal-body {
+    flex: 1;
+    overflow: hidden;
+    padding: 4px;
+  }
+
+  .terminal-body .xterm {
+    height: 100%;
+  }
+
+  .topbar-terminal-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .topbar-terminal-btn:hover {
+    background: var(--bg);
+    border-color: var(--text-dim);
+  }
+
+  .topbar-terminal-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .topbar-terminal-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
   /* ── Utility ── */
   .hidden { display: none !important; }
 
@@ -767,6 +947,12 @@
       <button data-view="timeline">Timeline</button>
       <button data-view="stats">Analytics</button>
     </div>
+    <button class="topbar-terminal-btn" id="terminalToggle" onclick="toggleTerminal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+      </svg>
+      Terminal
+    </button>
   </div>
 
   <!-- Sidebar -->
@@ -792,15 +978,30 @@
     </div>
     <div class="hidden" id="conversationView">
       <div class="conversation-header" id="convHeader"></div>
+      <div class="hidden summary-panel" id="summaryPanel"></div>
       <div class="messages" id="messagesContainer"></div>
     </div>
     <div class="hidden" id="timelineView"></div>
     <div class="hidden" id="statsView"></div>
   </div>
+
+  <!-- Terminal Panel -->
+  <div class="terminal-panel" id="terminalPanel">
+    <div class="terminal-header" id="terminalDragBar">
+      <div class="terminal-title"><span class="term-dot"></span>Terminal</div>
+      <div class="terminal-actions">
+        <button onclick="toggleTerminal()">Close</button>
+      </div>
+    </div>
+    <div class="terminal-body" id="terminalBody"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.min.js"></script>
 <script>
 // ── State ──
 let allSessions = [];
@@ -982,7 +1183,7 @@ async function selectSession(sessionId) {
       ${session.gitBranch ? `<span class="meta-separator">&middot;</span><span>${esc(session.gitBranch)}</span>` : ''}
     </div>
     <div class="header-actions">
-      <button class="action-btn primary" onclick="copyCmd('claude --resume ${session.id}', 'Resume command copied!')">
+      <button class="action-btn primary" onclick="resumeInTerminal('${session.id}', '${esc(session.projectPath)}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 12 5 19 12"/><line x1="12" y1="19" x2="12" y2="5"/></svg>
         Continue
       </button>
@@ -990,9 +1191,13 @@ async function selectSession(sessionId) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"/><line x1="12" y1="12" x2="12" y2="15"/></svg>
         Fork
       </button>
-      <button class="action-btn" onclick="copyCmd('${session.id}', 'Session ID copied!')">
+      <button class="action-btn" onclick="copyCmd('claude --resume ${session.id}', 'Resume command copied!')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Copy ID
+        Copy
+      </button>
+      <button class="action-btn" onclick="loadSummary('${session.id}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Summarize
       </button>
     </div>
   `;
@@ -1009,6 +1214,7 @@ async function selectSession(sessionId) {
     </div>
   `).join('');
 
+  document.getElementById('summaryPanel').classList.add('hidden');
   document.getElementById('mainContent').scrollTop = 0;
 }
 
@@ -1016,6 +1222,43 @@ function copyCmd(text, toastMsg) {
   navigator.clipboard.writeText(text).then(() => {
     showToast(toastMsg);
   });
+}
+
+async function loadSummary(sessionId, refresh = false) {
+  const panel = document.getElementById('summaryPanel');
+  panel.classList.remove('hidden');
+  panel.classList.add('loading');
+  panel.innerHTML = `
+    <div class="summary-header">
+      <span class="summary-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Summary
+      </span>
+    </div>
+    <div class="summary-content">Generating summary...</div>
+  `;
+
+  const params = refresh ? '?refresh=true' : '';
+  const data = await fetch(`/api/sessions/${sessionId}/summary${params}`).then(r => r.json());
+
+  panel.classList.remove('loading');
+
+  if (data.error) {
+    panel.innerHTML = `<div class="summary-content" style="color:var(--text-dim)">${esc(data.error)}</div>`;
+    return;
+  }
+
+  const cachedLabel = data.cached ? ' (cached)' : '';
+  panel.innerHTML = `
+    <div class="summary-header">
+      <span class="summary-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Summary${cachedLabel}
+      </span>
+      <button class="summary-refresh" onclick="loadSummary('${sessionId}', true)">Regenerate</button>
+    </div>
+    <div class="summary-content">${renderContent(data.summary)}</div>
+  `;
 }
 
 // ── Timeline View ──
@@ -1164,6 +1407,210 @@ document.addEventListener('keydown', (e) => {
       search.blur();
       loadSessions();
     }
+  }
+});
+
+// ── Terminal ──
+let term = null;
+let termSocket = null;
+let termFit = null;
+let terminalOpen = false;
+
+function toggleTerminal() {
+  terminalOpen = !terminalOpen;
+  const app = document.querySelector('.app');
+  const btn = document.getElementById('terminalToggle');
+
+  if (terminalOpen) {
+    app.classList.add('terminal-open');
+    btn.classList.add('active');
+    if (!term) {
+      initTerminal();
+    } else {
+      // Reconnect if socket closed
+      if (!termSocket || termSocket.readyState !== WebSocket.OPEN) {
+        connectTerminal();
+      }
+      setTimeout(() => termFit.fit(), 50);
+    }
+  } else {
+    app.classList.remove('terminal-open');
+    btn.classList.remove('active');
+  }
+}
+
+function initTerminal() {
+  term = new Terminal({
+    fontFamily: "'JetBrains Mono', 'Menlo', monospace",
+    fontSize: 13,
+    lineHeight: 1.3,
+    cursorBlink: true,
+    cursorStyle: 'bar',
+    theme: {
+      background: '#1a1a1a',
+      foreground: '#e0e0e0',
+      cursor: '#C45A36',
+      cursorAccent: '#1a1a1a',
+      selectionBackground: '#C45A3644',
+      black: '#1a1a1a',
+      red: '#e55c5c',
+      green: '#5cc98a',
+      yellow: '#d4a55c',
+      blue: '#5c9de5',
+      magenta: '#c57bdb',
+      cyan: '#5cc9c9',
+      white: '#e0e0e0',
+      brightBlack: '#666666',
+      brightRed: '#ff7b7b',
+      brightGreen: '#7bffb5',
+      brightYellow: '#ffd07b',
+      brightBlue: '#7bb5ff',
+      brightMagenta: '#e09bff',
+      brightCyan: '#7bffff',
+      brightWhite: '#ffffff',
+    }
+  });
+
+  termFit = new FitAddon.FitAddon();
+  const webLinks = new WebLinksAddon.WebLinksAddon();
+  term.loadAddon(termFit);
+  term.loadAddon(webLinks);
+
+  const container = document.getElementById('terminalBody');
+  term.open(container);
+
+  setTimeout(() => termFit.fit(), 50);
+
+  connectTerminal();
+
+  // Handle resize
+  const resizeObserver = new ResizeObserver(() => {
+    if (terminalOpen && termFit) {
+      termFit.fit();
+    }
+  });
+  resizeObserver.observe(container);
+
+  // Send resize events when terminal dimensions change
+  term.onResize(({ cols, rows }) => {
+    if (termSocket && termSocket.readyState === WebSocket.OPEN) {
+      termSocket.send(JSON.stringify({ type: 'resize', cols, rows }));
+    }
+  });
+}
+
+function connectTerminal() {
+  const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  termSocket = new WebSocket(`${wsProtocol}//${location.host}/ws/terminal`);
+
+  termSocket.binaryType = 'arraybuffer';
+
+  termSocket.onopen = () => {
+    // Send initial size
+    if (termFit) {
+      termFit.fit();
+      const dims = termFit.proposeDimensions();
+      if (dims) {
+        termSocket.send(JSON.stringify({ type: 'resize', cols: dims.cols, rows: dims.rows }));
+      }
+    }
+  };
+
+  termSocket.onmessage = (event) => {
+    if (event.data instanceof ArrayBuffer) {
+      term.write(new Uint8Array(event.data));
+    } else {
+      term.write(event.data);
+    }
+  };
+
+  termSocket.onclose = () => {
+    term.write('\r\n\x1b[90m[Terminal disconnected. Toggle to reconnect.]\x1b[0m\r\n');
+  };
+
+  // Send keyboard input to the server
+  term.onData((data) => {
+    if (termSocket && termSocket.readyState === WebSocket.OPEN) {
+      termSocket.send(new Blob([data]));
+    }
+  });
+}
+
+async function resumeInTerminal(sessionId, projectPath) {
+  // Open terminal if not already open
+  if (!terminalOpen) {
+    toggleTerminal();
+  }
+
+  // Look up the correct launch directory from the JSONL file location
+  let launchDir = projectPath;
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}/launch-dir`);
+    const data = await res.json();
+    if (data.launchDir) {
+      launchDir = data.launchDir;
+    }
+  } catch (e) {
+    // Fall back to projectPath
+  }
+
+  // Wait for connection then send the command
+  function sendResumeCmd() {
+    if (termSocket && termSocket.readyState === WebSocket.OPEN) {
+      let cmd = '';
+      if (launchDir) {
+        cmd += `cd ${launchDir} && `;
+      }
+      cmd += `claude --resume ${sessionId}\n`;
+      termSocket.send(new Blob([cmd]));
+      showToast('Resuming session in terminal...');
+    } else {
+      setTimeout(sendResumeCmd, 200);
+    }
+  }
+
+  setTimeout(sendResumeCmd, terminalOpen ? 100 : 500);
+}
+
+// ── Terminal drag-to-resize ──
+(function() {
+  const dragBar = document.getElementById('terminalDragBar');
+  const panel = document.getElementById('terminalPanel');
+  let dragging = false;
+  let startY = 0;
+  let startH = 0;
+
+  dragBar.addEventListener('mousedown', (e) => {
+    dragging = true;
+    startY = e.clientY;
+    startH = panel.offsetHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const delta = startY - e.clientY;
+    const newH = Math.max(150, Math.min(window.innerHeight - 200, startH + delta));
+    panel.style.height = newH + 'px';
+    if (termFit) termFit.fit();
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (dragging) {
+      dragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
+})();
+
+// ── Keyboard shortcut for terminal ──
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === '`') {
+    e.preventDefault();
+    toggleTerminal();
   }
 });
 

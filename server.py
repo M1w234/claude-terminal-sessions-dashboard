@@ -10,13 +10,21 @@ import json
 import glob
 import os
 import re
+import asyncio
+import pty
+import select
+import signal
+import struct
+import fcntl
+import termios
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+import anthropic
 
 app = FastAPI(title="Claude Sessions Dashboard")
 
@@ -25,6 +33,7 @@ PROJECTS_DIR = CLAUDE_DIR / "projects"
 NAMES_FILE = CLAUDE_DIR / "session-names.json"
 WORKSPACES_FILE = CLAUDE_DIR / "session-workspaces.json"
 CMUX_MAP_FILE = CLAUDE_DIR / "cmux-session-map.json"
+SUMMARIES_FILE = CLAUDE_DIR / "session-summaries.json"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -283,6 +292,7 @@ def read_session_conversation(session_id: str, limit: int = 200):
                     entry_type = entry.get("type")
                     if entry_type == "user":
                         text = extract_text_content(entry.get("message", {}))
+                        text = clean_text(text) if text else ""
                         if text:
                             messages.append({
                                 "role": "user",
@@ -324,14 +334,15 @@ def read_session_conversation(session_id: str, limit: int = 200):
 
 
 @app.get("/api/sessions")
-def list_sessions(
+async def list_sessions(
     search: Optional[str] = Query(None),
     project: Optional[str] = Query(None),
     workspace: Optional[str] = Query(None),
     limit: int = Query(100),
     offset: int = Query(0),
 ):
-    sessions = find_all_sessions()
+    loop = asyncio.get_event_loop()
+    sessions = await loop.run_in_executor(None, find_all_sessions)
 
     if search:
         q = search.lower()
@@ -356,8 +367,9 @@ def list_sessions(
 
 
 @app.get("/api/sessions/{session_id}")
-def get_session(session_id: str):
-    sessions = find_all_sessions()
+async def get_session(session_id: str):
+    loop = asyncio.get_event_loop()
+    sessions = await loop.run_in_executor(None, find_all_sessions)
     session = next((s for s in sessions if s["id"] == session_id), None)
     if not session:
         return {"error": "Session not found"}
@@ -365,9 +377,10 @@ def get_session(session_id: str):
 
 
 @app.get("/api/workspaces")
-def list_workspaces():
+async def list_workspaces():
     """List all known workspaces with session counts."""
-    sessions = find_all_sessions()
+    loop = asyncio.get_event_loop()
+    sessions = await loop.run_in_executor(None, find_all_sessions)
     workspaces = {}
     for s in sessions:
         ws = s.get("workspace", "")
@@ -379,14 +392,16 @@ def list_workspaces():
 
 
 @app.get("/api/sessions/{session_id}/messages")
-def get_session_messages(session_id: str, limit: int = Query(200)):
-    messages = read_session_conversation(session_id, limit)
+async def get_session_messages(session_id: str, limit: int = Query(200)):
+    loop = asyncio.get_event_loop()
+    messages = await loop.run_in_executor(None, read_session_conversation, session_id, limit)
     return {"messages": messages, "count": len(messages)}
 
 
 @app.get("/api/stats")
-def get_stats():
-    sessions = find_all_sessions()
+async def get_stats():
+    loop = asyncio.get_event_loop()
+    sessions = await loop.run_in_executor(None, find_all_sessions)
 
     # Basic stats
     total_sessions = len(sessions)
@@ -432,9 +447,10 @@ def get_stats():
 
 
 @app.get("/api/timeline")
-def get_timeline():
+async def get_timeline():
     """Return sessions grouped by day for timeline view."""
-    sessions = find_all_sessions()
+    loop = asyncio.get_event_loop()
+    sessions = await loop.run_in_executor(None, find_all_sessions)
     days = {}
 
     for s in sessions:
@@ -466,6 +482,224 @@ def get_timeline():
         })
 
     return {"timeline": timeline}
+
+
+@app.get("/api/sessions/{session_id}/launch-dir")
+def get_launch_dir(session_id: str):
+    """Get the original launch directory for a session (derived from its storage path)."""
+    for jsonl_file in glob.glob(str(PROJECTS_DIR / f"*/{session_id}.jsonl")):
+        # The parent dir name is the encoded project path
+        project_dir_name = Path(jsonl_file).parent.name  # e.g., "-Users-michaelwong"
+        # Convert back to real path: replace leading dash, then remaining dashes with /
+        launch_dir = "/" + project_dir_name[1:].replace("-", "/")
+        return {"launchDir": launch_dir}
+    return {"error": "Session not found"}
+
+
+# ── Session Summary ──────────────────────────────────────────────────────────
+
+
+def load_summaries():
+    try:
+        with open(SUMMARIES_FILE) as f:
+            return json.load(f)
+    except (IOError, json.JSONDecodeError):
+        return {}
+
+
+def save_summary(session_id: str, summary: str):
+    summaries = load_summaries()
+    summaries[session_id] = {
+        "summary": summary,
+        "generated": datetime.now(timezone.utc).isoformat(),
+    }
+    with open(SUMMARIES_FILE, "w") as f:
+        json.dump(summaries, f, indent=2)
+
+
+@app.get("/api/sessions/{session_id}/summary")
+def get_session_summary(session_id: str, refresh: bool = Query(False)):
+    """Get or generate an LLM summary of a session."""
+    # Check cache first
+    if not refresh:
+        summaries = load_summaries()
+        cached = summaries.get(session_id)
+        if cached:
+            return {"summary": cached["summary"], "cached": True, "generated": cached["generated"]}
+
+    # Build a condensed transcript for the LLM
+    messages = read_session_conversation(session_id, limit=300)
+    if not messages:
+        return {"error": "No messages found for this session"}
+
+    # Condense: keep user messages in full, truncate claude responses
+    condensed = []
+    for m in messages:
+        role = m["role"]
+        content = m["content"]
+        if role == "user":
+            condensed.append(f"User: {content[:500]}")
+        else:
+            # Truncate long assistant messages but keep enough for context
+            if len(content) > 300:
+                content = content[:300] + "..."
+            condensed.append(f"Claude: {content}")
+
+    transcript = "\n\n".join(condensed)
+    # Limit total size to ~12k chars to stay well within context
+    if len(transcript) > 12000:
+        transcript = transcript[:12000] + "\n\n[...truncated]"
+
+    # Use claude CLI to generate summary (uses OAuth auth, no API key needed)
+    try:
+        prompt = f"""Summarize this Claude Code session transcript. Write a concise summary with these sections:
+
+**Started with:** What the user initially asked for (1 sentence)
+**What happened:** Key actions, decisions, and progress (2-4 bullet points)
+**Current state:** Where things stand now (1 sentence)
+
+Be specific about what was built, changed, or decided. Keep the total summary under 150 words.
+
+<transcript>
+{transcript}
+</transcript>"""
+
+        import subprocess as sp
+        claude_bin = os.path.expanduser("~/.local/bin/claude")
+        result = sp.run(
+            [claude_bin, "-p", prompt, "--model", "haiku"],
+            capture_output=True, text=True, timeout=30,
+        )
+
+        if result.returncode != 0:
+            return {"error": f"Claude CLI failed: {result.stderr[:200]}"}
+
+        summary = result.stdout.strip()
+        if not summary:
+            return {"error": "Empty response from Claude"}
+
+        # Cache it
+        save_summary(session_id, summary)
+
+        return {"summary": summary, "cached": False, "generated": datetime.now(timezone.utc).isoformat()}
+
+    except sp.TimeoutExpired:
+        return {"error": "Summary generation timed out (30s)"}
+    except Exception as e:
+        return {"error": f"Failed to generate summary: {str(e)}"}
+
+
+# ── Terminal WebSocket ────────────────────────────────────────────────────────
+
+
+# Track active terminal processes for cleanup
+_terminal_processes: dict[int, int] = {}  # fd -> pid
+
+
+def _set_pty_size(fd: int, rows: int, cols: int):
+    """Set the terminal size on the pty."""
+    size = struct.pack("HHHH", rows, cols, 0, 0)
+    fcntl.ioctl(fd, termios.TIOCSWINSZ, size)
+
+
+@app.websocket("/ws/terminal")
+async def terminal_websocket(websocket: WebSocket):
+    await websocket.accept()
+
+    # Spawn a shell in a pty
+    pid, fd = pty.openpty() if False else (0, 0)  # placeholder
+    child_pid, fd = pty.fork()
+
+    if child_pid == 0:
+        # Child process — exec a shell
+        os.environ["TERM"] = "xterm-256color"
+        os.environ["COLORTERM"] = "truecolor"
+        os.execvp("/bin/zsh", ["/bin/zsh", "-l"])
+
+    # Parent process — relay between WebSocket and pty
+    _terminal_processes[fd] = child_pid
+    _set_pty_size(fd, 24, 80)
+
+    loop = asyncio.get_event_loop()
+
+    # Make the pty fd non-blocking so we can use asyncio reader
+    import os as _os
+    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, flags | _os.O_NONBLOCK)
+
+    async def read_pty():
+        """Read from pty and send to WebSocket using asyncio fd reader."""
+        try:
+            read_event = asyncio.Event()
+
+            def on_readable():
+                read_event.set()
+
+            loop.add_reader(fd, on_readable)
+
+            while True:
+                await read_event.wait()
+                read_event.clear()
+                try:
+                    while True:
+                        data = os.read(fd, 4096)
+                        if data:
+                            await websocket.send_bytes(data)
+                        else:
+                            return  # EOF
+                except BlockingIOError:
+                    pass  # No more data right now, wait for next event
+                except OSError:
+                    return
+        except (WebSocketDisconnect, Exception):
+            pass
+        finally:
+            try:
+                loop.remove_reader(fd)
+            except Exception:
+                pass
+
+    read_task = asyncio.create_task(read_pty())
+
+    try:
+        while True:
+            msg = await websocket.receive()
+
+            if msg.get("type") == "websocket.disconnect":
+                break
+
+            if "text" in msg:
+                # JSON control messages (resize, etc.)
+                try:
+                    ctrl = json.loads(msg["text"])
+                    if ctrl.get("type") == "resize":
+                        _set_pty_size(fd, ctrl.get("rows", 24), ctrl.get("cols", 80))
+                        continue
+                except (json.JSONDecodeError, KeyError):
+                    # Plain text input
+                    os.write(fd, msg["text"].encode())
+                    continue
+
+            if "bytes" in msg:
+                os.write(fd, msg["bytes"])
+
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        read_task.cancel()
+        # Clean up the child process
+        try:
+            os.kill(child_pid, signal.SIGTERM)
+            os.waitpid(child_pid, 0)
+        except (OSError, ChildProcessError):
+            pass
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        _terminal_processes.pop(fd, None)
 
 
 # ── Serve Frontend ───────────────────────────────────────────────────────────
