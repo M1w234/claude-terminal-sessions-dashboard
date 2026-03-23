@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Sessions</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23C45A36'/%3E%3Cpath d='M19.5 12.5c0 0-1.5-1.5-3.5-1.5s-3.5 1.5-3.5 1.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M12.5 17c0 0 1 2.5 3.5 2.5s3.5-2.5 3.5-2.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='13.5' cy='14.5' r='1' fill='%23FFF'/%3E%3Ccircle cx='18.5' cy='14.5' r='1' fill='%23FFF'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23C45A36'/%3E%3Cpath d='M90 30C56.9 30 30 56.9 30 90s26.9 60 60 60 60-26.9 60-60S123.1 30 90 30z' fill='%23F5EDE8' opacity='0.25'/%3E%3Cpath d='M110 70c0 0-8-9-20-9s-20 9-20 9' stroke='%23FFF' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M70 100c0 0 6 15 20 15s20-15 20-15' stroke='%23FFF' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='76' cy='85' r='6' fill='%23FFF'/%3E%3Ccircle cx='104' cy='85' r='6' fill='%23FFF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAF6F1;
+    --bg-surface: #FFFFFF;
+    --bg-sidebar: #F3EDE5;
+    --bg-hover: #EDE7DD;
+    --bg-active: #E8DFD3;
+    --border: #E0D6C8;
+    --border-light: #EDE7DD;
+    --text: #1A1A1A;
+    --text-secondary: #5C5650;
+    --text-dim: #8A7F74;
+    --text-faint: #B5AA9D;
+    --accent: #C45A36;
+    --accent-hover: #A84B2C;
+    --accent-light: #F2DDD4;
+    --accent-faint: #FAF0EB;
+    --user-bg: #FFFFFF;
+    --claude-bg: #FBF5EF;
+    --tool-bg: #F5F0E8;
+    --tool-border: #D4C4B0;
+    --green: #2D8A4E;
+    --shadow-sm: 0 1px 2px rgba(26,26,26,0.04);
+    --shadow-md: 0 2px 8px rgba(26,26,26,0.06);
+    --shadow-lg: 0 4px 16px rgba(26,26,26,0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+  }
+
+  /* ── Top Bar ── */
+  .topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+  }
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbar-logo {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topbar-logo svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .topbar h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    font-optical-sizing: auto;
+  }
+
+  .topbar-nav {
+    display: flex;
+    gap: 2px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .topbar-nav button {
+    padding: 6px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .topbar-nav button:hover { color: var(--text-secondary); }
+  .topbar-nav button.active {
+    background: var(--bg-surface);
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-sidebar);
+    overflow: hidden;
+  }
+
+  .search-box {
+    padding: 14px 14px 10px;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 9px 14px 9px 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-surface);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s ease;
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5' stroke='%23B5AA9D' stroke-width='2'/%3E%3Cpath d='M15.5 15.5L20 20' stroke='%23B5AA9D' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+  }
+
+  .search-box input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+
+  .search-box input::placeholder { color: var(--text-faint); }
+
+  .workspace-filters {
+    padding: 0 14px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .ws-chip {
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .ws-chip:hover { background: var(--bg-hover); color: var(--text-secondary); }
+
+  .ws-chip.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .ws-chip .chip-count {
+    opacity: 0.7;
+    margin-left: 2px;
+  }
+
+  .session-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px 8px;
+  }
+
+  .session-list::-webkit-scrollbar { width: 5px; }
+  .session-list::-webkit-scrollbar-track { background: transparent; }
+  .session-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .session-list::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+  .session-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    transition: all 0.12s ease;
+    border: 1px solid transparent;
+  }
+
+  .session-item:hover { background: var(--bg-hover); }
+
+  .session-item.active {
+    background: var(--bg-surface);
+    border-color: var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .session-item .name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+
+  .session-item.active .name { color: var(--accent); }
+
+  .session-item .meta {
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .session-item .meta .dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--text-faint);
+  }
+
+  .session-item .ws-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--accent-faint);
+    color: var(--accent);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+
+  .sidebar-footer {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Main Content ── */
+  .main {
+    overflow-y: auto;
+    padding: 0;
+    background: var(--bg);
+  }
+
+  .main::-webkit-scrollbar { width: 7px; }
+  .main::-webkit-scrollbar-track { background: transparent; }
+  .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── Welcome Screen ── */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 40px;
+  }
+
+  .welcome-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--accent-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .welcome-icon svg { width: 32px; height: 32px; }
+
+  .welcome h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .welcome p {
+    font-size: 14px;
+    max-width: 380px;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+
+  .welcome kbd {
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-surface);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  /* ── Conversation View ── */
+  .conversation-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .conversation-header h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .conversation-header .meta-row {
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .conversation-header .meta-row span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .meta-separator {
+    color: var(--text-faint);
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .action-btn {
+    padding: 7px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .action-btn:hover {
+    background: var(--bg);
+    border-color: var(--text-dim);
+  }
+
+  .action-btn.primary {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .action-btn.primary:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .messages {
+    padding: 24px 32px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .message {
+    margin-bottom: 8px;
+    padding: 18px 22px;
+    border-radius: var(--radius);
+    position: relative;
+  }
+
+  .message.user {
+    background: var(--user-bg);
+    border: 1px solid var(--border-light);
+  }
+
+  .message.assistant {
+    background: var(--claude-bg);
+    border: 1px solid #EAE0D3;
+  }
+
+  .message .role-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .message.user .role-label { color: var(--text-secondary); }
+
+  .message.assistant .role-label { color: var(--accent); }
+
+  .role-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .message.user .role-dot { background: var(--text-dim); }
+  .message.assistant .role-dot { background: var(--accent); }
+
+  .message .content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .message .content code {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--tool-bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+  }
+
+  .message .content .tool-use {
+    display: block;
+    margin: 8px 0;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--tool-bg);
+    border: 1px solid var(--tool-border);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .message .timestamp {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 8px;
+  }
+
+  /* ── Timeline View ── */
+  .timeline-view {
+    padding: 28px 32px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .timeline-day {
+    margin-bottom: 28px;
+  }
+
+  .timeline-day h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.01em;
+  }
+
+  .timeline-day h3 .day-count {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-faint);
+    margin-left: 6px;
+  }
+
+  .timeline-session {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border: 1px solid transparent;
+  }
+
+  .timeline-session:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-light);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .timeline-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+
+  .timeline-session .ts-name {
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+
+  .timeline-session .ts-meta {
+    font-size: 11px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  /* ── Stats View ── */
+  .stats-view {
+    padding: 28px 32px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .stats-view > h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+
+  .stat-card {
+    padding: 22px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .stat-card .label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .stat-card .value {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+  }
+
+  .chart-section {
+    margin-bottom: 36px;
+  }
+
+  .chart-section h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bar-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    width: 140px;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 24px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-light), var(--accent));
+    border-radius: var(--radius-sm);
+    transition: width 0.4s ease;
+    min-width: 3px;
+  }
+
+  .bar-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    width: 36px;
+  }
+
+  /* ── Activity Chart ── */
+  .activity-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 130px;
+    padding: 0 4px 0 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  .activity-bar {
+    flex: 1;
+    min-width: 10px;
+    max-width: 28px;
+    background: var(--accent-light);
+    border-radius: 4px 4px 0 0;
+    transition: all 0.2s ease;
+    cursor: default;
+  }
+
+  .activity-bar:hover { background: var(--accent); }
+
+  .activity-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Utility ── */
+  .hidden { display: none !important; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    background: var(--bg-surface);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Loading state ── */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .loading-text {
+    color: var(--text-faint);
+    font-style: italic;
+    padding: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#C45A36" opacity="0.12"/>
+          <path d="M15.5 8.5C15.5 8.5 14 7 12 7C10 7 8.5 8.5 8.5 8.5" stroke="#C45A36" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M8.5 13C8.5 13 9.5 15.5 12 15.5C14.5 15.5 15.5 13 15.5 13" stroke="#C45A36" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="9.5" cy="10.5" r="1" fill="#C45A36"/>
+          <circle cx="14.5" cy="10.5" r="1" fill="#C45A36"/>
+        </svg>
+      </div>
+      <h1>Claude Sessions</h1>
+    </div>
+    <div class="topbar-nav">
+      <button class="active" data-view="conversation">Sessions</button>
+      <button data-view="timeline">Timeline</button>
+      <button data-view="stats">Analytics</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Search sessions..." autocomplete="off">
+    </div>
+    <div class="workspace-filters" id="workspaceFilters"></div>
+    <div class="session-list" id="sessionList"></div>
+    <div class="sidebar-footer" id="sidebarFooter"></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main" id="mainContent">
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 6L9 17l-5-5" stroke="#C45A36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Welcome back</h2>
+      <p>Select a session from the sidebar to review the conversation, or explore the Timeline and Analytics views. Press <kbd>&#8984;K</kbd> to search.</p>
+    </div>
+    <div class="hidden" id="conversationView">
+      <div class="conversation-header" id="convHeader"></div>
+      <div class="messages" id="messagesContainer"></div>
+    </div>
+    <div class="hidden" id="timelineView"></div>
+    <div class="hidden" id="statsView"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+let allSessions = [];
+let allWorkspaces = [];
+let currentSessionId = null;
+let currentView = 'conversation';
+let activeWorkspace = null;  // null = show all
+
+// ── API ──
+const api = {
+  async sessions(search = '') {
+    const params = new URLSearchParams({ limit: '500' });
+    if (search) params.set('search', search);
+    if (activeWorkspace) params.set('workspace', activeWorkspace);
+    const res = await fetch(`/api/sessions?${params}`);
+    return res.json();
+  },
+  async workspaces() {
+    const res = await fetch('/api/workspaces');
+    return res.json();
+  },
+  async messages(sessionId) {
+    const res = await fetch(`/api/sessions/${sessionId}/messages`);
+    return res.json();
+  },
+  async stats() {
+    const res = await fetch('/api/stats');
+    return res.json();
+  },
+  async timeline() {
+    const res = await fetch('/api/timeline');
+    return res.json();
+  }
+};
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Time formatting ──
+function timeAgo(iso) {
+  if (!iso) return '';
+  const dt = new Date(iso);
+  const now = new Date();
+  const sec = (now - dt) / 1000;
+  if (sec < 60) return 'just now';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+  if (sec < 604800) return Math.floor(sec / 86400) + 'd ago';
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function shortProject(p) {
+  if (!p) return '';
+  const home = '/Users/michaelwong';
+  if (p.startsWith(home)) return '~' + p.slice(home.length);
+  return p;
+}
+
+// ── Render Content ──
+function renderContent(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  html = html.replace(/\[Tool: (\w+)\](.*)/g,
+    '<span class="tool-use">$1$2</span>');
+
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  return html;
+}
+
+// ── Session List ──
+async function loadSessions(search = '') {
+  const data = await api.sessions(search);
+  allSessions = data.sessions;
+  renderSessionList();
+}
+
+function renderSessionList() {
+  const list = document.getElementById('sessionList');
+  const footer = document.getElementById('sidebarFooter');
+
+  list.innerHTML = allSessions.map(s => `
+    <div class="session-item ${s.id === currentSessionId ? 'active' : ''}"
+         data-id="${s.id}" onclick="selectSession('${s.id}')">
+      <div class="name">${esc(s.name)}</div>
+      <div class="meta">
+        <span>${timeAgo(s.modified || s.created)}</span>
+        <span class="dot"></span>
+        <span>${s.messageCount} msgs</span>
+        ${s.workspace ? `<span class="dot"></span><span class="ws-badge">${esc(s.workspace)}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  footer.textContent = `${allSessions.length} sessions${activeWorkspace ? ` in ${activeWorkspace}` : ''}`;
+}
+
+async function loadWorkspaces() {
+  const data = await api.workspaces();
+  allWorkspaces = data.workspaces;
+  renderWorkspaceFilters();
+}
+
+function renderWorkspaceFilters() {
+  const container = document.getElementById('workspaceFilters');
+  if (!allWorkspaces.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML =
+    `<button class="ws-chip ${!activeWorkspace ? 'active' : ''}" onclick="filterWorkspace(null)">All</button>` +
+    allWorkspaces.map(ws => `
+      <button class="ws-chip ${activeWorkspace === ws.name ? 'active' : ''}"
+              onclick="filterWorkspace('${esc(ws.name)}')">
+        ${esc(ws.name)}<span class="chip-count">${ws.sessionCount}</span>
+      </button>
+    `).join('');
+}
+
+function filterWorkspace(ws) {
+  activeWorkspace = ws;
+  renderWorkspaceFilters();
+  loadSessions(document.getElementById('search').value);
+}
+
+function esc(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Conversation View ──
+async function selectSession(sessionId) {
+  currentSessionId = sessionId;
+  renderSessionList();
+
+  const session = allSessions.find(s => s.id === sessionId);
+  if (!session) return;
+
+  switchView('conversation');
+
+  const header = document.getElementById('convHeader');
+  header.innerHTML = `
+    <h2>${esc(session.name)}</h2>
+    <div class="meta-row">
+      <span>${formatTime(session.created)}</span>
+      <span class="meta-separator">&middot;</span>
+      <span>${session.messageCount} messages</span>
+      <span class="meta-separator">&middot;</span>
+      <span>${shortProject(session.projectPath)}</span>
+      ${session.workspace ? `<span class="meta-separator">&middot;</span><span>${esc(session.workspace)}</span>` : ''}
+      ${session.gitBranch ? `<span class="meta-separator">&middot;</span><span>${esc(session.gitBranch)}</span>` : ''}
+    </div>
+    <div class="header-actions">
+      <button class="action-btn primary" onclick="copyCmd('claude --resume ${session.id}', 'Resume command copied!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 12 5 19 12"/><line x1="12" y1="19" x2="12" y2="5"/></svg>
+        Continue
+      </button>
+      <button class="action-btn" onclick="copyCmd('claude --resume ${session.id} --fork-session', 'Fork command copied!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"/><line x1="12" y1="12" x2="12" y2="15"/></svg>
+        Fork
+      </button>
+      <button class="action-btn" onclick="copyCmd('${session.id}', 'Session ID copied!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy ID
+      </button>
+    </div>
+  `;
+
+  const container = document.getElementById('messagesContainer');
+  container.innerHTML = '<div class="loading-text">Loading conversation...</div>';
+
+  const data = await api.messages(sessionId);
+  container.innerHTML = data.messages.map(m => `
+    <div class="message ${m.role}">
+      <div class="role-label"><span class="role-dot"></span>${m.role === 'user' ? 'You' : 'Claude'}</div>
+      <div class="content">${renderContent(m.content)}</div>
+      ${m.timestamp ? `<div class="timestamp">${formatTime(m.timestamp)}</div>` : ''}
+    </div>
+  `).join('');
+
+  document.getElementById('mainContent').scrollTop = 0;
+}
+
+function copyCmd(text, toastMsg) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(toastMsg);
+  });
+}
+
+// ── Timeline View ──
+async function renderTimeline() {
+  const container = document.getElementById('timelineView');
+  container.innerHTML = '<div class="loading-text">Loading timeline...</div>';
+
+  const data = await api.timeline();
+  container.innerHTML = '<div class="timeline-view">' +
+    data.timeline.map(day => `
+      <div class="timeline-day">
+        <h3>${formatDate(day.date)}<span class="day-count">${day.sessions.length} session${day.sessions.length !== 1 ? 's' : ''}</span></h3>
+        ${day.sessions.map(s => `
+          <div class="timeline-session" onclick="selectSession('${s.id}')">
+            <div class="timeline-dot"></div>
+            <div class="ts-name">${esc(s.name)}</div>
+            <div class="ts-meta">${s.messageCount} msgs &middot; ${shortProject(s.projectPath)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('') +
+    '</div>';
+}
+
+// ── Stats View ──
+async function renderStats() {
+  const container = document.getElementById('statsView');
+  container.innerHTML = '<div class="loading-text">Loading analytics...</div>';
+
+  const stats = await api.stats();
+
+  const maxDaily = Math.max(...stats.sessionsByDay.map(d => d[1]), 1);
+  const maxProject = Math.max(...Object.values(stats.sessionsByProject), 1);
+
+  container.innerHTML = `
+    <div class="stats-view">
+      <h2>Analytics</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Total Sessions</div>
+          <div class="value">${stats.totalSessions}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Total Messages</div>
+          <div class="value">${stats.totalMessages.toLocaleString()}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Projects</div>
+          <div class="value">${Object.keys(stats.sessionsByProject).length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Avg Msgs / Session</div>
+          <div class="value">${stats.totalSessions ? Math.round(stats.totalMessages / stats.totalSessions) : 0}</div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h3>Daily Activity</h3>
+        <div class="activity-chart">
+          ${stats.sessionsByDay.map(d => `
+            <div class="activity-bar" style="height: ${(d[1] / maxDaily) * 100}%"
+                 title="${d[0]}: ${d[1]} sessions"></div>
+          `).join('')}
+        </div>
+        <div class="activity-labels">
+          <span>${stats.sessionsByDay.length > 0 ? stats.sessionsByDay[0][0].slice(5) : ''}</span>
+          <span>${stats.sessionsByDay.length > 0 ? stats.sessionsByDay[stats.sessionsByDay.length - 1][0].slice(5) : ''}</span>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h3>Sessions by Project</h3>
+        <div class="bar-chart">
+          ${Object.entries(stats.sessionsByProject).slice(0, 10).map(([name, count]) => `
+            <div class="bar-row">
+              <div class="bar-label" title="${esc(name)}">${esc(name)}</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${(count / maxProject) * 100}%"></div>
+              </div>
+              <div class="bar-value">${count}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h3>Sessions by Branch</h3>
+        <div class="bar-chart">
+          ${Object.entries(stats.sessionsByBranch).slice(0, 8).map(([name, count]) => `
+            <div class="bar-row">
+              <div class="bar-label">${esc(name || 'none')}</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${(count / maxProject) * 100}%"></div>
+              </div>
+              <div class="bar-value">${count}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── View Switching ──
+function switchView(view) {
+  currentView = view;
+
+  document.querySelectorAll('.topbar-nav button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+
+  document.getElementById('welcomeScreen').classList.toggle('hidden', view !== 'welcome');
+  document.getElementById('conversationView').classList.toggle('hidden',
+    view !== 'conversation' || !currentSessionId);
+  document.getElementById('timelineView').classList.toggle('hidden', view !== 'timeline');
+  document.getElementById('statsView').classList.toggle('hidden', view !== 'stats');
+
+  if (view === 'conversation' && !currentSessionId) {
+    document.getElementById('welcomeScreen').classList.remove('hidden');
+  }
+
+  if (view === 'timeline') renderTimeline();
+  if (view === 'stats') renderStats();
+}
+
+// ── Events ──
+document.querySelectorAll('.topbar-nav button').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+
+let searchTimeout;
+document.getElementById('search').addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => loadSessions(e.target.value), 200);
+});
+
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('search').focus();
+  }
+  if (e.key === 'Escape') {
+    const search = document.getElementById('search');
+    if (search === document.activeElement) {
+      search.value = '';
+      search.blur();
+      loadSessions();
+    }
+  }
+});
+
+// ── Init ──
+loadWorkspaces();
+loadSessions();
+</script>
+</body>
+</html>
