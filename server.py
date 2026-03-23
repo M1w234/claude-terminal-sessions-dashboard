@@ -11,17 +11,11 @@ import glob
 import os
 import re
 import asyncio
-import pty
-import select
-import signal
-import struct
-import fcntl
-import termios
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import anthropic
@@ -587,119 +581,6 @@ Be specific about what was built, changed, or decided. Keep the total summary un
         return {"error": "Summary generation timed out (30s)"}
     except Exception as e:
         return {"error": f"Failed to generate summary: {str(e)}"}
-
-
-# ── Terminal WebSocket ────────────────────────────────────────────────────────
-
-
-# Track active terminal processes for cleanup
-_terminal_processes: dict[int, int] = {}  # fd -> pid
-
-
-def _set_pty_size(fd: int, rows: int, cols: int):
-    """Set the terminal size on the pty."""
-    size = struct.pack("HHHH", rows, cols, 0, 0)
-    fcntl.ioctl(fd, termios.TIOCSWINSZ, size)
-
-
-@app.websocket("/ws/terminal")
-async def terminal_websocket(websocket: WebSocket):
-    await websocket.accept()
-
-    # Spawn a shell in a pty
-    pid, fd = pty.openpty() if False else (0, 0)  # placeholder
-    child_pid, fd = pty.fork()
-
-    if child_pid == 0:
-        # Child process — exec a shell
-        os.environ["TERM"] = "xterm-256color"
-        os.environ["COLORTERM"] = "truecolor"
-        os.execvp("/bin/zsh", ["/bin/zsh", "-l"])
-
-    # Parent process — relay between WebSocket and pty
-    _terminal_processes[fd] = child_pid
-    _set_pty_size(fd, 24, 80)
-
-    loop = asyncio.get_event_loop()
-
-    # Make the pty fd non-blocking so we can use asyncio reader
-    import os as _os
-    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-    fcntl.fcntl(fd, fcntl.F_SETFL, flags | _os.O_NONBLOCK)
-
-    async def read_pty():
-        """Read from pty and send to WebSocket using asyncio fd reader."""
-        try:
-            read_event = asyncio.Event()
-
-            def on_readable():
-                read_event.set()
-
-            loop.add_reader(fd, on_readable)
-
-            while True:
-                await read_event.wait()
-                read_event.clear()
-                try:
-                    while True:
-                        data = os.read(fd, 4096)
-                        if data:
-                            await websocket.send_bytes(data)
-                        else:
-                            return  # EOF
-                except BlockingIOError:
-                    pass  # No more data right now, wait for next event
-                except OSError:
-                    return
-        except (WebSocketDisconnect, Exception):
-            pass
-        finally:
-            try:
-                loop.remove_reader(fd)
-            except Exception:
-                pass
-
-    read_task = asyncio.create_task(read_pty())
-
-    try:
-        while True:
-            msg = await websocket.receive()
-
-            if msg.get("type") == "websocket.disconnect":
-                break
-
-            if "text" in msg:
-                # JSON control messages (resize, etc.)
-                try:
-                    ctrl = json.loads(msg["text"])
-                    if ctrl.get("type") == "resize":
-                        _set_pty_size(fd, ctrl.get("rows", 24), ctrl.get("cols", 80))
-                        continue
-                except (json.JSONDecodeError, KeyError):
-                    # Plain text input
-                    os.write(fd, msg["text"].encode())
-                    continue
-
-            if "bytes" in msg:
-                os.write(fd, msg["bytes"])
-
-    except WebSocketDisconnect:
-        pass
-    except Exception:
-        pass
-    finally:
-        read_task.cancel()
-        # Clean up the child process
-        try:
-            os.kill(child_pid, signal.SIGTERM)
-            os.waitpid(child_pid, 0)
-        except (OSError, ChildProcessError):
-            pass
-        try:
-            os.close(fd)
-        except OSError:
-            pass
-        _terminal_processes.pop(fd, None)
 
 
 # ── Serve Frontend ───────────────────────────────────────────────────────────

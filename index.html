@@ -1101,9 +1101,23 @@ function renderContent(text) {
 
 // ── Session List ──
 async function loadSessions(search = '') {
-  const data = await api.sessions(search);
-  allSessions = data.sessions;
-  renderSessionList();
+  try {
+    const data = await api.sessions(search);
+    allSessions = data.sessions || [];
+    renderSessionList();
+  } catch (e) {
+    console.error('Failed to load sessions:', e);
+    // Retry once after a short delay
+    setTimeout(async () => {
+      try {
+        const data = await api.sessions(search);
+        allSessions = data.sessions || [];
+        renderSessionList();
+      } catch (e2) {
+        console.error('Retry failed:', e2);
+      }
+    }, 1000);
+  }
 }
 
 function renderSessionList() {
@@ -1183,17 +1197,17 @@ async function selectSession(sessionId) {
       ${session.gitBranch ? `<span class="meta-separator">&middot;</span><span>${esc(session.gitBranch)}</span>` : ''}
     </div>
     <div class="header-actions">
-      <button class="action-btn primary" onclick="resumeInTerminal('${session.id}', '${esc(session.projectPath)}')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 12 5 19 12"/><line x1="12" y1="19" x2="12" y2="5"/></svg>
-        Continue
+      <button class="action-btn primary" onclick="copyCmd('claude --resume ${session.id}', 'Resume command copied!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
       </button>
       <button class="action-btn" onclick="copyCmd('claude --resume ${session.id} --fork-session', 'Fork command copied!')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"/><line x1="12" y1="12" x2="12" y2="15"/></svg>
         Fork
       </button>
-      <button class="action-btn" onclick="copyCmd('claude --resume ${session.id}', 'Resume command copied!')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Copy
+      <button class="action-btn" onclick="resumeInTerminal('${session.id}', '${esc(session.projectPath)}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Continue
       </button>
       <button class="action-btn" onclick="loadSummary('${session.id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -1501,7 +1515,7 @@ function initTerminal() {
 
 function connectTerminal() {
   const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  termSocket = new WebSocket(`${wsProtocol}//${location.host}/ws/terminal`);
+  termSocket = new WebSocket(`${wsProtocol}//${location.hostname}:3457/ws/terminal`);
 
   termSocket.binaryType = 'arraybuffer';
 
