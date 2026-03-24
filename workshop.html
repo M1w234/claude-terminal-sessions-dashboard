@@ -548,6 +548,7 @@ body {
     <a href="/" class="topbar-nav">Sessions</a>
     <a href="/tools" class="topbar-nav">Tools</a>
     <span class="topbar-title">Workshop</span>
+
   </div>
   <div class="topbar-right">
     <button class="btn-new" onclick="openAddModal()">+ New Idea</button>
@@ -1148,14 +1149,6 @@ function debounce(fn, ms) {
 // ── Theme ──
 
 function getPreferredTheme() {
-  const stored = localStorage.getItem('tools-theme');
-  const timestamp = localStorage.getItem('tools-theme-set');
-  if (stored && timestamp) {
-    const age = Date.now() - parseInt(timestamp, 10);
-    if (age < 24 * 60 * 60 * 1000) return stored;
-  }
-  localStorage.removeItem('tools-theme');
-  localStorage.removeItem('tools-theme-set');
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -1166,11 +1159,10 @@ function applyTheme(theme) {
 
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('tools-theme', next);
-  localStorage.setItem('tools-theme-set', Date.now().toString());
-  applyTheme(next);
+  applyTheme(current === 'dark' ? 'light' : 'dark');
 }
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => applyTheme(e.matches ? 'dark' : 'light'));
 
 // ── Keyboard ──
 

@@ -1033,15 +1033,12 @@
 <script>
 // ── Theme ──
 function getPreferredTheme() {
-  const stored = localStorage.getItem('dashboard-theme');
-  if (stored) return stored;
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('theme-icon').innerHTML = theme === 'dark' ? '&#9788;' : '&#9790;';
-  localStorage.setItem('dashboard-theme', theme);
 }
 
 function toggleTheme() {
@@ -1050,6 +1047,7 @@ function toggleTheme() {
 }
 
 applyTheme(getPreferredTheme());
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => applyTheme(e.matches ? 'dark' : 'light'));
 
 // ── State ──
 let allSessions = [];
