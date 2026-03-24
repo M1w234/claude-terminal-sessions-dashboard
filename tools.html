@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Code Registry</title>
+<title>Claude Code Tools</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23C45A36'/%3E%3Cpath d='M19.5 12.5c0 0-1.5-1.5-3.5-1.5s-3.5 1.5-3.5 1.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M12.5 17c0 0 1 2.5 3.5 2.5s3.5-2.5 3.5-2.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='13.5' cy='14.5' r='1' fill='%23FFF'/%3E%3Ccircle cx='18.5' cy='14.5' r='1' fill='%23FFF'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1089,7 +1089,7 @@ body {
   <div class="topbar-left">
     <a href="/" class="topbar-nav">Sessions</a>
     <a href="/workshop" class="topbar-nav">Workshop</a>
-    <span class="topbar-title">Registry</span>
+    <span class="topbar-title">Tools</span>
   </div>
   <div class="topbar-right">
     <button class="wb-open-btn" onclick="openWorkbench('create')" style="padding:5px 12px;font-size:12px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">+ Create</button>
@@ -1202,7 +1202,7 @@ body {
 // - Commands: scanned from ~/.claude/commands/*.md
 // - Hooks: scanned from ~/.claude/hooks/*.sh
 // - Plugins: scanned from ~/.claude/plugins/marketplaces/*/plugins/
-// - CLI commands + MCP integrations: loaded from registry-static.json
+// - CLI commands + MCP integrations: loaded from tools-static.json
 const STATIC_ENTRIES = [];
 
 // ── Scenarios ──
@@ -1647,16 +1647,16 @@ function renderFiltersUI() {
 // ── Theme ──
 
 function getPreferredTheme() {
-  const stored = localStorage.getItem('registry-theme');
-  const timestamp = localStorage.getItem('registry-theme-set');
+  const stored = localStorage.getItem('tools-theme');
+  const timestamp = localStorage.getItem('tools-theme-set');
   // If manually set within the last 24 hours, use that
   if (stored && timestamp) {
     const age = Date.now() - parseInt(timestamp, 10);
     if (age < 24 * 60 * 60 * 1000) return stored;
   }
   // Otherwise follow OS
-  localStorage.removeItem('registry-theme');
-  localStorage.removeItem('registry-theme-set');
+  localStorage.removeItem('tools-theme');
+  localStorage.removeItem('tools-theme-set');
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -1668,8 +1668,8 @@ function applyTheme(theme) {
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('registry-theme', next);
-  localStorage.setItem('registry-theme-set', Date.now().toString());
+  localStorage.setItem('tools-theme', next);
+  localStorage.setItem('tools-theme-set', Date.now().toString());
   applyTheme(next);
 }
 
@@ -2221,7 +2221,7 @@ async function init() {
       wbReferencedIdeas.push(ideaId);
     }
     openWorkbench(params.get('openWorkbench'));
-    history.replaceState({}, '', '/registry');
+    history.replaceState({}, '', '/tools');
   }
 }
 

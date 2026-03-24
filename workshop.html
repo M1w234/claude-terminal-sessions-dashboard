@@ -546,7 +546,7 @@ body {
 <div class="topbar">
   <div class="topbar-left">
     <a href="/" class="topbar-nav">Sessions</a>
-    <a href="/registry" class="topbar-nav">Registry</a>
+    <a href="/tools" class="topbar-nav">Tools</a>
     <span class="topbar-title">Workshop</span>
   </div>
   <div class="topbar-right">
@@ -978,7 +978,7 @@ async function reEnrich(id) {
 }
 
 function openInPlanner(id) {
-  window.location.href = `/registry?openWorkbench=create&ideaRef=${id}`;
+  window.location.href = `/tools?openWorkbench=create&ideaRef=${id}`;
 }
 
 // ── Enrichment Polling ──
@@ -1148,14 +1148,14 @@ function debounce(fn, ms) {
 // ── Theme ──
 
 function getPreferredTheme() {
-  const stored = localStorage.getItem('registry-theme');
-  const timestamp = localStorage.getItem('registry-theme-set');
+  const stored = localStorage.getItem('tools-theme');
+  const timestamp = localStorage.getItem('tools-theme-set');
   if (stored && timestamp) {
     const age = Date.now() - parseInt(timestamp, 10);
     if (age < 24 * 60 * 60 * 1000) return stored;
   }
-  localStorage.removeItem('registry-theme');
-  localStorage.removeItem('registry-theme-set');
+  localStorage.removeItem('tools-theme');
+  localStorage.removeItem('tools-theme-set');
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -1167,8 +1167,8 @@ function applyTheme(theme) {
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('registry-theme', next);
-  localStorage.setItem('registry-theme-set', Date.now().toString());
+  localStorage.setItem('tools-theme', next);
+  localStorage.setItem('tools-theme-set', Date.now().toString());
   applyTheme(next);
 }
 

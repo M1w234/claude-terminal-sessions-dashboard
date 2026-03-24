@@ -37,8 +37,8 @@ SKILLS_DIR = CLAUDE_DIR / "skills"
 COMMANDS_DIR = CLAUDE_DIR / "commands"
 HOOKS_DIR = CLAUDE_DIR / "hooks"
 PLUGINS_DIR = CLAUDE_DIR / "plugins" / "marketplaces"
-REGISTRY_FILE = Path(__file__).parent / "registry.json"
-STATIC_FILE = Path(__file__).parent / "registry-static.json"
+TOOLS_FILE = Path(__file__).parent / "tools.json"
+TOOLS_STATIC_FILE = Path(__file__).parent / "tools-static.json"
 IDEAS_FILE = Path(__file__).parent / "ideas.json"
 
 APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN", "")
@@ -639,7 +639,7 @@ Be specific about what was built, changed, or decided. Keep the total summary un
         return {"error": f"Failed to generate summary: {str(e)}"}
 
 
-# ── Skill Registry ──────────────────────────────────────────────────────────
+# ── Tools Catalog ───────────────────────────────────────────────────────────
 
 
 def parse_skill_frontmatter(filepath: Path):
@@ -668,11 +668,11 @@ def parse_skill_frontmatter(filepath: Path):
 
 
 def build_catalog():
-    """Scan skills and commands, merge with registry.json enrichments."""
+    """Scan skills and commands, merge with tools.json enrichments."""
     # Load enrichments
     enrichments = {}
     try:
-        with open(REGISTRY_FILE) as f:
+        with open(TOOLS_FILE) as f:
             enrichments = json.load(f)
     except (IOError, json.JSONDecodeError):
         pass
@@ -862,9 +862,9 @@ def build_catalog():
                 })
 
     # Load user-configured static entries (MCP integrations, etc.)
-    if STATIC_FILE.exists():
+    if TOOLS_STATIC_FILE.exists():
         try:
-            with open(STATIC_FILE) as f:
+            with open(TOOLS_STATIC_FILE) as f:
                 static_entries = json.load(f)
             for entry in static_entries:
                 entry_id = entry.get("id", "")
@@ -1188,7 +1188,7 @@ The referenced skill content is provided below. Provide thorough analysis:
 
 If multiple skills are referenced, compare them in depth: architecture differences, when to use each, patterns that could cross-pollinate.""",
 
-    "enrich": """You are a Claude Code catalog enrichment tool. For each referenced skill, generate registry.json enrichment data.
+    "enrich": """You are a Claude Code catalog enrichment tool. For each referenced skill, generate tools.json enrichment data.
 
 {CATALOG_SUMMARY}
 
@@ -1724,9 +1724,15 @@ def serve_frontend():
     return FileResponse(DASHBOARD_DIR / "index.html")
 
 
+@app.get("/tools")
+def serve_tools():
+    return FileResponse(DASHBOARD_DIR / "tools.html")
+
+
 @app.get("/registry")
-def serve_registry():
-    return FileResponse(DASHBOARD_DIR / "registry.html")
+def serve_registry_redirect():
+    """Backwards-compatible alias."""
+    return FileResponse(DASHBOARD_DIR / "tools.html")
 
 
 @app.get("/workshop")
