@@ -222,6 +222,22 @@ body {
   pointer-events: none;
 }
 
+.search-clear {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: none;
+  padding: 0 2px;
+  line-height: 1;
+}
+.search-clear:hover {
+  color: var(--text-secondary);
+}
+
 .result-count {
   font-size: 13px;
   color: var(--text-dim);
@@ -1123,6 +1139,7 @@ body {
       </span>
       <input type="text" id="search-input" placeholder='Try "find leads on Instagram" or "audit SEO"' autocomplete="off" />
       <span class="search-kbd" id="search-kbd">/</span>
+      <span class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear search">&times;</span>
     </div>
     <div style="display:flex;align-items:center;justify-content:center;margin-top:10px;gap:8px">
       <div class="result-count" id="result-count"></div>
@@ -1667,6 +1684,7 @@ function setSearch(query) {
   const input = document.getElementById('search-input');
   input.value = query;
   input.focus();
+  updateSearchUI();
   applyFilters();
 }
 
@@ -1759,7 +1777,22 @@ document.addEventListener('keydown', (e) => {
 
 // ── Search input handling ──
 
+function updateSearchUI() {
+  const hasValue = !!document.getElementById('search-input').value;
+  document.getElementById('search-clear').style.display = hasValue ? 'block' : 'none';
+  document.getElementById('search-kbd').style.display = hasValue ? 'none' : 'block';
+}
+
+function clearSearch() {
+  const input = document.getElementById('search-input');
+  input.value = '';
+  input.focus();
+  updateSearchUI();
+  applyFilters();
+}
+
 document.getElementById('search-input').addEventListener('input', debounce(() => {
+  updateSearchUI();
   applyFilters();
 }, 150));
 
@@ -1770,15 +1803,19 @@ document.getElementById('search-input').addEventListener('keydown', (e) => {
     const q = document.getElementById('search-input').value.trim();
     if (q) runSmartSearch(q);
   }
+  if (e.key === 'Escape') {
+    clearSearch();
+    e.target.blur();
+  }
 });
 
 document.getElementById('search-input').addEventListener('focus', () => {
-  document.getElementById('search-kbd').style.display = 'none';
+  if (!document.getElementById('search-input').value) {
+    document.getElementById('search-kbd').style.display = 'none';
+  }
 });
 document.getElementById('search-input').addEventListener('blur', () => {
-  if (!document.getElementById('search-input').value) {
-    document.getElementById('search-kbd').style.display = 'block';
-  }
+  updateSearchUI();
 });
 
 function debounce(fn, ms) {
