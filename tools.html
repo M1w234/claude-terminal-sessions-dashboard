@@ -254,6 +254,12 @@ body {
   background: var(--bg-hover);
   color: var(--text-secondary);
 }
+.pill.multi-toggle {
+  border-style: dashed;
+}
+.pill.multi-toggle.active {
+  border-style: solid;
+}
 .pill.active {
   background: var(--accent);
   color: #fff;
@@ -1212,18 +1218,18 @@ const STATIC_ENTRIES = [];
 
 // ── Scenarios ──
 const SCENARIOS = [
-  { label:'Research a Company', query:'research a company', tools:['scout','linkedin-companies','web-crawl','competitor-intel'] },
-  { label:'Generate Leads', query:'find leads', tools:['lead-gen','ig-search','contact-scrape','gmaps-scrape'] },
-  { label:'Analyze Competitors', query:'analyze competitors', tools:['competitor-intel','fb-ads','gmaps-reviews','google-serp'] },
-  { label:'Audit Social Media', query:'analyze social media content', tools:['ig-posts','ig-reels','fb-posts','tiktok-scrape','yt-scrape'] },
-  { label:'Create Content', query:'create visual content', tools:['frontend-design','canva','gamma','algorithmic-art','playground'] },
-  { label:'Find Contact Info', query:'find email and phone', tools:['contact-scrape','fb-pages','linkedin-profiles'] },
-  { label:'Analyze Reviews', query:'analyze customer reviews', tools:['gmaps-reviews','yelp-reviews'] },
-  { label:'Check SEO', query:'check SEO rankings', tools:['google-serp','screaming-frog-cli','web-crawl'] },
-  { label:'Get Video Transcripts', query:'transcribe a video', tools:['ig-transcript','yt-transcript'] },
-  { label:'Manage Schedule', query:'schedule meetings', tools:['calendly','outlook'] },
-  { label:'Resume a Session', query:'resume session', tools:['cli-continue','cli-resume','cli-fork','cli-sessions'] },
-  { label:'Configure Claude Code', query:'change settings', tools:['plugin-update-config','plugin-keybindings'] },
+  { label:'Research a Company', query:'research a company' },
+  { label:'Generate Leads', query:'find leads' },
+  { label:'Analyze Competitors', query:'analyze competitors' },
+  { label:'Audit Social Media', query:'analyze social media content' },
+  { label:'Create Content', query:'create visual content' },
+  { label:'Find Contact Info', query:'find email and phone' },
+  { label:'Analyze Reviews', query:'analyze customer reviews' },
+  { label:'Check SEO', query:'check SEO rankings' },
+  { label:'Get Video Transcripts', query:'transcribe a video' },
+  { label:'Manage Schedule', query:'schedule meetings' },
+  { label:'Resume a Session', query:'resume session' },
+  { label:'Configure Claude Code', query:'change settings' },
 ];
 
 // ── Synonyms ──
@@ -1331,6 +1337,7 @@ function getScenarioIcon(label) {
 let allItems = [];
 let filteredItems = [];
 let activeFilters = new Set();
+let multiSelectMode = false;
 let focusedCardIndex = -1;
 let detailOpen = false;
 
@@ -1452,12 +1459,38 @@ function renderFilters() {
     pill.className = 'pill' + (activeFilters.has(cat) ? ' active' : '');
     pill.innerHTML = `${CATEGORIES[cat]?.label || cat}<span class="count">${count}</span>`;
     pill.onclick = () => {
-      if (activeFilters.has(cat)) activeFilters.delete(cat);
-      else activeFilters.add(cat);
+      if (multiSelectMode) {
+        if (activeFilters.has(cat)) activeFilters.delete(cat);
+        else activeFilters.add(cat);
+      } else {
+        if (activeFilters.has(cat) && activeFilters.size === 1) {
+          activeFilters.clear();
+        } else {
+          activeFilters.clear();
+          activeFilters.add(cat);
+        }
+      }
       applyFilters();
     };
     el.appendChild(pill);
   }
+
+  // Multi-select toggle
+  const toggle = document.createElement('span');
+  toggle.className = 'pill multi-toggle' + (multiSelectMode ? ' active' : '');
+  toggle.title = multiSelectMode ? 'Switch to single select' : 'Select multiple categories';
+  toggle.textContent = '+';
+  toggle.style.cssText = 'font-size:13px;font-weight:700;min-width:24px;text-align:center;padding:3px 6px';
+  toggle.onclick = () => {
+    multiSelectMode = !multiSelectMode;
+    if (!multiSelectMode && activeFilters.size > 1) {
+      const keep = [...activeFilters].pop();
+      activeFilters.clear();
+      activeFilters.add(keep);
+    }
+    applyFilters();
+  };
+  el.appendChild(toggle);
 }
 
 function renderCards(items) {
@@ -1525,6 +1558,8 @@ function renderCards(items) {
 function renderScenarios() {
   const grid = document.getElementById('scenario-grid');
   SCENARIOS.forEach(s => {
+    const matches = searchEngine ? searchEngine.search(s.query) : [];
+    if (matches.length === 0) return;
     const card = document.createElement('div');
     card.className = 'scenario-card';
     card.onclick = () => setSearch(s.query);
@@ -1533,11 +1568,14 @@ function renderScenarios() {
       <div class="scenario-icon">${sIcon}</div>
       <div class="scenario-text">
         <div class="scenario-label">${s.label}</div>
-        <div class="scenario-tools">${s.tools.length} tools</div>
+        <div class="scenario-tools">${matches.length} tool${matches.length === 1 ? '' : 's'}</div>
       </div>
     `;
     grid.appendChild(card);
   });
+  // Hide section entirely if no scenarios have matches
+  const section = document.getElementById('scenarios-section');
+  if (section && grid.children.length === 0) section.style.display = 'none';
 }
 
 function openDetail(item) {
