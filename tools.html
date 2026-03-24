@@ -1474,7 +1474,7 @@ function renderFilters() {
   for (const [cat, count] of sortedCats) {
     const pill = document.createElement('span');
     pill.className = 'pill' + (activeFilters.has(cat) ? ' active' : '');
-    pill.innerHTML = `${CATEGORIES[cat]?.label || cat}<span class="count">${count}</span>`;
+    pill.innerHTML = `${CATEGORIES[cat]?.label || cat.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}<span class="count">${count}</span>`;
     pill.onclick = () => {
       if (multiSelectMode) {
         if (activeFilters.has(cat)) activeFilters.delete(cat);
