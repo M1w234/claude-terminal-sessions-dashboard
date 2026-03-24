@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ideas Workshop</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23C45A36'/%3E%3Cpath d='M19.5 12.5c0 0-1.5-1.5-3.5-1.5s-3.5 1.5-3.5 1.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M12.5 17c0 0 1 2.5 3.5 2.5s3.5-2.5 3.5-2.5' stroke='%23FFF' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='13.5' cy='14.5' r='1' fill='%23FFF'/%3E%3Ccircle cx='18.5' cy='14.5' r='1' fill='%23FFF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAF6F1;
+  --bg-surface: #FFFFFF;
+  --bg-hover: #EDE7DD;
+  --bg-active: #E8DFD3;
+  --border: #E0D6C8;
+  --border-light: #EDE7DD;
+  --text: #1A1A1A;
+  --text-secondary: #5C5650;
+  --text-dim: #8A7F74;
+  --text-faint: #B5AA9D;
+  --accent: #C45A36;
+  --accent-hover: #A84B2C;
+  --accent-light: #F2DDD4;
+  --accent-faint: #FAF0EB;
+  --green: #2D8A4E;
+  --indigo: #5B6ABF;
+  --gold: #B8860B;
+  --purple: #7B68AE;
+  --shadow-sm: 0 1px 2px rgba(26,26,26,0.04);
+  --shadow-md: 0 2px 8px rgba(26,26,26,0.06);
+  --shadow-lg: 0 4px 16px rgba(26,26,26,0.08);
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  --status-inbox: #5B6ABF;
+  --status-exploring: #B8860B;
+  --status-planned: #C45A36;
+  --status-building: #2D8A4E;
+  --status-done: #7B68AE;
+}
+
+[data-theme="dark"] {
+  --bg: #1A1816;
+  --bg-surface: #242220;
+  --bg-hover: #2E2C28;
+  --bg-active: #383430;
+  --border: #3A3630;
+  --border-light: #2E2C28;
+  --text: #E8E0D8;
+  --text-secondary: #A89E94;
+  --text-dim: #7A7068;
+  --text-faint: #5A5248;
+  --accent-light: #3A2820;
+  --accent-faint: #2A1E18;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-nav {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+}
+.topbar-nav:hover { color: var(--text); background: var(--bg-hover); }
+.topbar-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+.btn-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-new:hover { background: var(--accent-hover); }
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.theme-toggle:hover { background: var(--bg-hover); color: var(--text); }
+
+/* ── Main ── */
+.main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+/* ── Search ── */
+.search-section { text-align: center; margin-bottom: 28px; }
+.search-prompt {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: 20px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+.search-bar { position: relative; max-width: 560px; margin: 0 auto; }
+.search-bar input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text);
+  outline: none;
+  transition: all 0.2s ease;
+}
+.search-bar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.search-bar input::placeholder { color: var(--text-faint); }
+.search-icon {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--text-faint); pointer-events: none;
+}
+.search-kbd {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--text-faint); border: 1px solid var(--border);
+  border-radius: 3px; padding: 2px 6px; pointer-events: none;
+}
+.result-count { font-size: 13px; color: var(--text-dim); margin-top: 10px; }
+
+/* ── Filter Pills ── */
+.filters {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; margin-bottom: 28px;
+}
+.pill {
+  padding: 3px 10px; font-size: 11px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; transition: all 0.15s ease;
+  user-select: none; white-space: nowrap;
+}
+.pill:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pill .count { opacity: 0.7; margin-left: 2px; }
+
+/* ── Card Grid ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px; margin-bottom: 48px;
+}
+.card {
+  background: var(--bg-surface);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  position: relative;
+}
+.card:hover { border-color: var(--border-light); box-shadow: var(--shadow-sm); }
+.card.focused { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+.card-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 6px;
+}
+.card-icon { color: var(--text-dim); margin-right: 10px; flex-shrink: 0; display: flex; align-items: center; }
+.card-name {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 14px; font-weight: 500;
+  letter-spacing: -0.02em; color: var(--text);
+  flex: 1; line-height: 1.3;
+}
+.card-url {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--text-dim);
+  margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-notes {
+  font-size: 13px; color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 10px;
+}
+.card-footer {
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 8px;
+}
+.card-tags-text { font-size: 11px; color: var(--text-faint); flex: 1; }
+.card-time { font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; flex-shrink: 0;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.status-dot[data-status="inbox"]     { background: var(--status-inbox); box-shadow: 0 0 0 2px #dde0f2; }
+.status-dot[data-status="exploring"] { background: var(--status-exploring); box-shadow: 0 0 0 2px #f0e6c8; }
+.status-dot[data-status="planned"]   { background: var(--status-planned); box-shadow: 0 0 0 2px var(--accent-light); }
+.status-dot[data-status="building"]  { background: var(--status-building); box-shadow: 0 0 0 2px #d4eddb; }
+.status-dot[data-status="done"]      { background: var(--status-done); box-shadow: 0 0 0 2px #e4dff0; }
+[data-theme="dark"] .status-dot { box-shadow: 0 0 0 2px var(--bg-hover); }
+
+.enrich-indicator {
+  position: absolute; top: 12px; right: 14px;
+  font-size: 12px; line-height: 1;
+}
+.enrich-indicator.running { animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center; padding: 60px 20px; display: none;
+}
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; color: var(--text-faint); }
+.empty-state-text { font-size: 15px; color: var(--text-dim); margin-bottom: 8px; }
+.empty-state-hint { font-size: 13px; color: var(--text-faint); }
+
+/* ── Detail Panel ── */
+.detail-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,26,26,0.3);
+  z-index: 200; opacity: 0; visibility: hidden;
+  transition: all 0.2s;
+}
+.detail-overlay.open { opacity: 1; visibility: visible; }
+[data-theme="dark"] .detail-overlay { background: rgba(0,0,0,0.5); }
+
+.detail-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(520px, 100vw);
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  z-index: 201;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto; padding: 28px;
+}
+.detail-panel.open { transform: translateX(0); }
+
+.detail-close {
+  position: absolute; top: 16px; right: 16px;
+  background: none; border: none; font-size: 20px;
+  cursor: pointer; color: var(--text-dim);
+  padding: 4px 8px; border-radius: var(--radius-sm);
+}
+.detail-close:hover { background: var(--bg-hover); color: var(--text); }
+
+.detail-status-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 16px;
+}
+.detail-status-pill {
+  padding: 3px 10px; font-size: 11px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; transition: all 0.15s;
+}
+.detail-status-pill:hover { background: var(--bg-hover); }
+.detail-status-pill.active { color: #fff; border-color: transparent; }
+.detail-status-pill.active[data-status="inbox"]     { background: var(--status-inbox); }
+.detail-status-pill.active[data-status="exploring"] { background: var(--status-exploring); }
+.detail-status-pill.active[data-status="planned"]   { background: var(--status-planned); }
+.detail-status-pill.active[data-status="building"]  { background: var(--status-building); }
+.detail-status-pill.active[data-status="done"]       { background: var(--status-done); }
+
+.detail-name {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 22px; font-weight: 500;
+  margin-bottom: 6px; letter-spacing: -0.02em;
+  outline: none; min-height: 1.3em;
+}
+.detail-name:focus { border-bottom: 2px solid var(--accent); }
+
+.detail-url {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; color: var(--accent);
+  margin-bottom: 16px; word-break: break-all;
+}
+.detail-url a { color: var(--accent); text-decoration: none; }
+.detail-url a:hover { text-decoration: underline; }
+
+.detail-source {
+  font-size: 12px; color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.detail-section { margin-bottom: 20px; }
+.detail-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.detail-notes {
+  width: 100%; min-height: 80px; padding: 10px 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text);
+  resize: vertical; outline: none; line-height: 1.5;
+}
+.detail-notes:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+.detail-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text-secondary); background: var(--bg);
+}
+.tag-chip .remove {
+  cursor: pointer; color: var(--text-faint);
+  font-size: 14px; line-height: 1;
+}
+.tag-chip .remove:hover { color: var(--accent); }
+.tag-input {
+  border: none; outline: none; font-size: 12px;
+  background: transparent; color: var(--text);
+  width: 100px; padding: 2px 4px;
+}
+.tag-input::placeholder { color: var(--text-faint); }
+
+.detail-skills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.skill-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid var(--accent-light); border-radius: 10px;
+  color: var(--accent); background: var(--accent-faint);
+}
+.skill-chip .remove { cursor: pointer; color: var(--accent); font-size: 14px; }
+.skill-chip .remove:hover { opacity: 0.7; }
+.add-skill-btn {
+  font-size: 12px; color: var(--text-dim);
+  cursor: pointer; padding: 2px 8px;
+  border: 1px dashed var(--border); border-radius: 10px;
+}
+.add-skill-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+.enriched-content {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+  font-size: 13px; line-height: 1.6; color: var(--text-secondary);
+  max-height: 300px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-word;
+}
+.enriched-toggle {
+  font-size: 12px; color: var(--text-dim); cursor: pointer;
+  margin-bottom: 8px; user-select: none;
+}
+.enriched-toggle:hover { color: var(--accent); }
+
+.enrich-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; transition: all 0.15s;
+}
+.enrich-btn:hover { background: var(--bg-hover); border-color: var(--text-dim); }
+
+.detail-actions {
+  margin-top: 20px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px;
+}
+.action-btn {
+  flex: 1; padding: 8px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s;
+  text-align: center; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary);
+}
+.action-btn:hover { background: var(--bg-hover); }
+.action-btn.primary {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.action-btn.primary:hover { background: var(--accent-hover); }
+.action-btn.danger { color: #c44; border-color: #c44; }
+.action-btn.danger:hover { background: #c44; color: #fff; }
+
+/* ── Quick Add Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,26,26,0.3);
+  z-index: 300; opacity: 0; visibility: hidden;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,0.5); }
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: min(480px, calc(100vw - 48px));
+  box-shadow: var(--shadow-lg);
+  transform: translateY(10px);
+  transition: transform 0.2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px; font-weight: 500;
+  margin-bottom: 20px; letter-spacing: -0.02em;
+}
+.modal-field { margin-bottom: 16px; }
+.modal-label {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--text-dim); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.modal-input {
+  width: 100%; padding: 10px 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text); outline: none;
+}
+.modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.modal-textarea {
+  width: 100%; padding: 10px 12px; min-height: 80px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text); outline: none;
+  resize: vertical; line-height: 1.5;
+}
+.modal-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+.url-preview {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 6px; font-size: 12px; color: var(--text-dim);
+}
+
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.modal-btn {
+  flex: 1; padding: 10px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s;
+  text-align: center; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary);
+}
+.modal-btn:hover { background: var(--bg-hover); }
+.modal-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.modal-btn.primary:hover { background: var(--accent-hover); }
+
+/* ── Skill Search Modal ── */
+.skill-modal {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  width: min(400px, calc(100vw - 48px));
+  max-height: 400px;
+  box-shadow: var(--shadow-lg);
+  z-index: 400;
+  display: none;
+}
+.skill-modal.open { display: block; }
+.skill-modal input {
+  width: 100%; padding: 8px 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text); outline: none;
+  margin-bottom: 8px;
+}
+.skill-modal-results {
+  max-height: 280px; overflow-y: auto;
+}
+.skill-modal-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 13px;
+}
+.skill-modal-item:hover { background: var(--bg-hover); }
+.skill-modal-item .cmd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="topbar-nav">Sessions</a>
+    <a href="/registry" class="topbar-nav">Registry</a>
+    <span class="topbar-title">Workshop</span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-new" onclick="openAddModal()">+ New Idea</button>
+    <button class="theme-toggle" onclick="toggleTheme()"><span id="theme-icon">&#9790;</span></button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="search-section">
+    <div class="search-prompt">What are you looking for?</div>
+    <div class="search-bar">
+      <span class="search-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" id="search-input" placeholder="Search ideas..." autocomplete="off" />
+      <span class="search-kbd" id="search-kbd">/</span>
+    </div>
+    <div class="result-count" id="result-count"></div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="card-grid" id="card-grid"></div>
+
+  <div class="empty-state" id="empty-state">
+    <div class="empty-state-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+    </div>
+    <div class="empty-state-text">No ideas yet</div>
+    <div class="empty-state-hint">Save a link or jot down a thought to get started</div>
+  </div>
+</div>
+
+<!-- Detail Panel -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detail-panel">
+  <button class="detail-close" onclick="closeDetail()" title="Close (Esc)">&#10005;</button>
+  <div id="detail-content"></div>
+</div>
+
+<!-- Quick Add Modal -->
+<div class="modal-overlay" id="add-modal" onclick="closeAddModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Save an Idea</div>
+    <div class="modal-field">
+      <label class="modal-label">URL</label>
+      <input type="text" class="modal-input" id="add-url" placeholder="Paste a link (YouTube, Instagram, any website...)" oninput="previewUrl()" />
+      <div class="url-preview" id="url-preview"></div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Notes</label>
+      <textarea class="modal-textarea" id="add-notes" placeholder="What's the idea? Why did it catch your eye?"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Tags (comma separated)</label>
+      <input type="text" class="modal-input" id="add-tags" placeholder="e.g. skill-idea, workflow, automation" />
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeAddModal()">Cancel</button>
+      <button class="modal-btn primary" id="add-submit" onclick="submitIdea()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Skill Search Modal -->
+<div class="skill-modal" id="skill-modal">
+  <input type="text" id="skill-search" placeholder="Search skills..." oninput="searchSkills()" autocomplete="off" />
+  <div class="skill-modal-results" id="skill-results"></div>
+</div>
+
+<script>
+// ── SVG Icons ──
+const SVG = (path, size=16) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+
+const SOURCE_ICONS = {
+  instagram: SVG('<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/>'),
+  youtube: SVG('<path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.4 19.6C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 001.94-2A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98" fill="currentColor" stroke="none"/>'),
+  web: SVG('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>'),
+  manual: SVG('<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>'),
+};
+
+const ENRICH_ICONS = {
+  pending: '<span style="color:var(--text-faint)" title="Pending enrichment">&#9679;</span>',
+  running: '<span class="enrich-indicator running" style="color:var(--gold)" title="Enriching...">&#9679;</span>',
+  done: '<span style="color:var(--green)" title="Enriched">&#10003;</span>',
+  failed: '<span style="color:#c44" title="Enrichment failed">&#9888;</span>',
+  none: '',
+};
+
+const STATUSES = ['inbox', 'exploring', 'planned', 'building', 'done'];
+
+// ── State ──
+let allIdeas = [];
+let filteredIdeas = [];
+let activeFilter = 'all';
+let detailOpen = false;
+let currentDetailId = null;
+let catalogCache = null;
+let pollTimers = {};
+
+// ── API ──
+
+async function fetchIdeas() {
+  try {
+    const resp = await fetch('/api/ideas');
+    const data = await resp.json();
+    allIdeas = data.ideas || [];
+    applyFilters();
+    // Start polling for any running enrichments
+    allIdeas.forEach(i => {
+      if (i.enrichment_status === 'running') startPolling(i.id);
+    });
+  } catch (e) {
+    console.error('Failed to fetch ideas:', e);
+  }
+}
+
+async function fetchCatalog() {
+  if (catalogCache) return catalogCache;
+  try {
+    const resp = await fetch('/api/catalog');
+    const data = await resp.json();
+    catalogCache = data.items || [];
+    return catalogCache;
+  } catch (e) { return []; }
+}
+
+async function apiPost(url, body) {
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return resp;
+}
+
+async function apiPut(url, body) {
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return resp.json();
+}
+
+// ── Rendering ──
+
+function renderFilters() {
+  const el = document.getElementById('filters');
+  el.innerHTML = '';
+
+  const counts = { all: allIdeas.length };
+  STATUSES.forEach(s => counts[s] = 0);
+  allIdeas.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
+
+  const labels = { all: 'All', inbox: 'Inbox', exploring: 'Exploring', planned: 'Planned', building: 'Building', done: 'Done' };
+
+  ['all', ...STATUSES].forEach(key => {
+    const pill = document.createElement('span');
+    pill.className = 'pill' + (activeFilter === key ? ' active' : '');
+    pill.innerHTML = `${labels[key]}<span class="count">${counts[key]}</span>`;
+    pill.onclick = () => { activeFilter = key; applyFilters(); };
+    el.appendChild(pill);
+  });
+}
+
+function renderCards(ideas) {
+  const grid = document.getElementById('card-grid');
+  const empty = document.getElementById('empty-state');
+  const resultCount = document.getElementById('result-count');
+  grid.innerHTML = '';
+
+  const query = document.getElementById('search-input').value.trim();
+
+  if (ideas.length === 0 && allIdeas.length === 0) {
+    empty.style.display = 'block';
+    resultCount.textContent = '';
+    return;
+  }
+
+  if (ideas.length === 0 && query) {
+    empty.style.display = 'block';
+    resultCount.textContent = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+  resultCount.textContent = `${ideas.length} idea${ideas.length !== 1 ? 's' : ''}`;
+
+  ideas.forEach(idea => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => openDetail(idea.id);
+
+    const icon = SOURCE_ICONS[idea.source_type] || SOURCE_ICONS.manual;
+    const enrichIcon = ENRICH_ICONS[idea.enrichment_status] || '';
+    const tags = (idea.tags || []).slice(0, 3).map(t => esc(t)).join(' \u00b7 ');
+
+    card.innerHTML = `
+      <div class="enrich-indicator">${enrichIcon}</div>
+      <div class="card-header">
+        <span class="card-icon">${icon}</span>
+        <span class="card-name">${esc(idea.title)}</span>
+      </div>
+      ${idea.url ? `<div class="card-url">${esc(truncUrl(idea.url))}</div>` : ''}
+      ${idea.notes ? `<div class="card-notes">${esc(idea.notes)}</div>` : ''}
+      <div class="card-footer">
+        <div class="card-tags-text">${tags}</div>
+        <span class="status-badge"><span class="status-dot" data-status="${idea.status}"></span>${idea.status}</span>
+        <span class="card-time">${timeAgo(idea.updated || idea.created)}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function applyFilters() {
+  const query = document.getElementById('search-input').value.trim().toLowerCase();
+  let ideas = [...allIdeas];
+
+  if (activeFilter !== 'all') {
+    ideas = ideas.filter(i => i.status === activeFilter);
+  }
+
+  if (query) {
+    ideas = ideas.filter(i =>
+      (i.title || '').toLowerCase().includes(query) ||
+      (i.notes || '').toLowerCase().includes(query) ||
+      (i.url || '').toLowerCase().includes(query) ||
+      (i.tags || []).some(t => t.toLowerCase().includes(query))
+    );
+  }
+
+  filteredIdeas = ideas;
+  renderFilters();
+  renderCards(ideas);
+}
+
+// ── Detail Panel ──
+
+async function openDetail(id) {
+  const idea = allIdeas.find(i => i.id === id);
+  if (!idea) return;
+
+  detailOpen = true;
+  currentDetailId = id;
+  const panel = document.getElementById('detail-panel');
+  const overlay = document.getElementById('detail-overlay');
+  const content = document.getElementById('detail-content');
+
+  const icon = SOURCE_ICONS[idea.source_type] || SOURCE_ICONS.manual;
+  const enrichStatus = idea.enrichment_status || 'none';
+  const hasContent = idea.enriched_content && idea.enriched_content.length > 0;
+
+  const statusPills = STATUSES.map(s =>
+    `<span class="detail-status-pill${idea.status === s ? ' active' : ''}" data-status="${s}" onclick="updateStatus('${id}','${s}')">${s}</span>`
+  ).join('');
+
+  const tagChips = (idea.tags || []).map(t =>
+    `<span class="tag-chip">${esc(t)}<span class="remove" onclick="removeTag('${id}','${esc(t)}')">&times;</span></span>`
+  ).join('');
+
+  const skillChips = (idea.related_skills || []).map(s =>
+    `<span class="skill-chip">/${esc(s)}<span class="remove" onclick="removeSkill('${id}','${esc(s)}')">&times;</span></span>`
+  ).join('');
+
+  content.innerHTML = `
+    <div style="color:var(--text-dim);margin-bottom:12px">${SOURCE_ICONS[idea.source_type] || SOURCE_ICONS.manual}</div>
+    <div class="detail-status-row">${statusPills}</div>
+    <div class="detail-name" contenteditable="true" id="detail-title" onblur="saveTitle('${id}')">${esc(idea.title)}</div>
+    ${idea.url ? `<div class="detail-url"><a href="${esc(idea.url)}" target="_blank">${esc(idea.url)}</a></div>` : ''}
+    <div class="detail-source">${esc(idea.source_type)} &middot; saved ${timeAgo(idea.created)}</div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Notes</div>
+      <textarea class="detail-notes" id="detail-notes" onblur="saveNotes('${id}')">${esc(idea.notes || '')}</textarea>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Tags</div>
+      <div class="detail-tags" id="detail-tags">
+        ${tagChips}
+        <input type="text" class="tag-input" id="tag-input" placeholder="+ add tag" onkeydown="addTagKey(event,'${id}')" />
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Related Skills</div>
+      <div class="detail-skills" id="detail-skills">
+        ${skillChips}
+        <span class="add-skill-btn" onclick="openSkillModal('${id}')">+ Add skill</span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">
+        Enriched Content
+        ${enrichStatus === 'running' ? '<span class="enrich-indicator running" style="color:var(--gold);margin-left:8px">&#9679; enriching...</span>' : ''}
+        ${enrichStatus === 'failed' ? `<span style="color:#c44;margin-left:8px;font-size:11px;font-weight:400;text-transform:none;letter-spacing:0">Failed${idea.enrichment_error ? ': ' + esc(idea.enrichment_error.substring(0, 80)) : ''}</span>` : ''}
+      </div>
+      ${hasContent ? `
+        <div class="enriched-toggle" onclick="toggleEnriched()" id="enriched-toggle">&#9660; Show content (${Math.round(idea.enriched_content.length / 1000)}k chars)</div>
+        <div class="enriched-content" id="enriched-box" style="display:none">${esc(idea.enriched_content)}</div>
+      ` : enrichStatus === 'none' ? '<div style="font-size:13px;color:var(--text-faint)">No URL to enrich</div>' : ''}
+      ${idea.url && (enrichStatus === 'done' || enrichStatus === 'failed') ? `
+        <button class="enrich-btn" onclick="reEnrich('${id}')" style="margin-top:8px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Re-enrich
+        </button>
+      ` : ''}
+    </div>
+
+    <div class="detail-actions">
+      <button class="action-btn primary" onclick="openInPlanner('${id}')">Open in Skill Planner</button>
+      <button class="action-btn danger" onclick="deleteIdea('${id}')">Delete</button>
+    </div>
+  `;
+
+  panel.classList.add('open');
+  overlay.classList.add('open');
+}
+
+function closeDetail() {
+  detailOpen = false;
+  currentDetailId = null;
+  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('detail-overlay').classList.remove('open');
+  closeSkillModal();
+}
+
+function toggleEnriched() {
+  const box = document.getElementById('enriched-box');
+  const toggle = document.getElementById('enriched-toggle');
+  if (box.style.display === 'none') {
+    box.style.display = 'block';
+    toggle.innerHTML = toggle.innerHTML.replace('&#9660;', '&#9650;').replace('Show', 'Hide');
+  } else {
+    box.style.display = 'none';
+    toggle.innerHTML = toggle.innerHTML.replace('&#9650;', '&#9660;').replace('Hide', 'Show');
+  }
+}
+
+// ── Inline Edits ──
+
+async function updateStatus(id, status) {
+  const idea = allIdeas.find(i => i.id === id);
+  if (!idea) return;
+  idea.status = status;
+  await apiPut(`/api/ideas/${id}`, { status });
+  applyFilters();
+  if (currentDetailId === id) openDetail(id);
+}
+
+async function saveTitle(id) {
+  const el = document.getElementById('detail-title');
+  const title = el.innerText.trim();
+  const idea = allIdeas.find(i => i.id === id);
+  if (!idea || idea.title === title) return;
+  idea.title = title;
+  await apiPut(`/api/ideas/${id}`, { title });
+  applyFilters();
+}
+
+async function saveNotes(id) {
+  const el = document.getElementById('detail-notes');
+  const notes = el.value.trim();
+  const idea = allIdeas.find(i => i.id === id);
+  if (!idea || idea.notes === notes) return;
+  idea.notes = notes;
+  await apiPut(`/api/ideas/${id}`, { notes });
+  applyFilters();
+}
+
+async function addTagKey(e, id) {
+  if (e.key !== 'Enter') return;
+  const input = document.getElementById('tag-input');
+  const tag = input.value.trim();
+  if (!tag) return;
+  const idea = allIdeas.find(i => i.id === id);
+  if (!idea) return;
+  if (!idea.tags) idea.tags = [];
+  if (idea.tags.includes(tag)) { input.value = ''; return; }
+  idea.tags.push(tag);
+  await apiPut(`/api/ideas/${id}`, { tags: idea.tags });
+  input.value = '';
+  openDetail(id);
+  applyFilters();
+}
+
+async function removeTag(id, tag) {
+  const idea = allIdeas.find(i => i.id === id);
+  if (!idea) return;
+  idea.tags = (idea.tags || []).filter(t => t !== tag);
+  await apiPut(`/api/ideas/${id}`, { tags: idea.tags });
+  openDetail(id);
+  applyFilters();
+}
+
+async function removeSkill(id, skillId) {
+  const idea = allIdeas.find(i => i.id === id);
+  if (!idea) return;
+  idea.related_skills = (idea.related_skills || []).filter(s => s !== skillId);
+  await apiPut(`/api/ideas/${id}`, { related_skills: idea.related_skills });
+  openDetail(id);
+}
+
+async function deleteIdea(id) {
+  if (!confirm('Delete this idea?')) return;
+  await fetch(`/api/ideas/${id}`, { method: 'DELETE' });
+  allIdeas = allIdeas.filter(i => i.id !== id);
+  closeDetail();
+  applyFilters();
+}
+
+async function reEnrich(id) {
+  const idea = allIdeas.find(i => i.id === id);
+  if (!idea) return;
+  idea.enrichment_status = 'running';
+  idea.enrichment_error = '';
+  await apiPost(`/api/ideas/${id}/enrich`, {});
+  openDetail(id);
+  startPolling(id);
+}
+
+function openInPlanner(id) {
+  window.location.href = `/registry?openWorkbench=create&ideaRef=${id}`;
+}
+
+// ── Enrichment Polling ──
+
+function startPolling(id) {
+  if (pollTimers[id]) return;
+  pollTimers[id] = setInterval(async () => {
+    try {
+      const resp = await fetch(`/api/ideas/${id}`);
+      const idea = await resp.json();
+      const idx = allIdeas.findIndex(i => i.id === id);
+      if (idx >= 0) allIdeas[idx] = idea;
+      if (idea.enrichment_status !== 'running') {
+        clearInterval(pollTimers[id]);
+        delete pollTimers[id];
+        applyFilters();
+        if (currentDetailId === id) openDetail(id);
+      }
+    } catch (e) {
+      clearInterval(pollTimers[id]);
+      delete pollTimers[id];
+    }
+  }, 3000);
+}
+
+// ── Skill Modal ──
+
+let skillModalIdeaId = null;
+
+async function openSkillModal(ideaId) {
+  skillModalIdeaId = ideaId;
+  const modal = document.getElementById('skill-modal');
+  modal.classList.add('open');
+  document.getElementById('skill-search').value = '';
+  document.getElementById('skill-search').focus();
+  await searchSkills();
+}
+
+function closeSkillModal() {
+  document.getElementById('skill-modal').classList.remove('open');
+  skillModalIdeaId = null;
+}
+
+async function searchSkills() {
+  const catalog = await fetchCatalog();
+  const q = document.getElementById('skill-search').value.trim().toLowerCase();
+  const results = q
+    ? catalog.filter(c => c.name.toLowerCase().includes(q) || c.id.includes(q) || (c.description||'').toLowerCase().includes(q)).slice(0, 10)
+    : catalog.filter(c => c.type === 'skill').slice(0, 10);
+
+  const container = document.getElementById('skill-results');
+  container.innerHTML = '';
+  const idea = allIdeas.find(i => i.id === skillModalIdeaId);
+  const existing = idea ? (idea.related_skills || []) : [];
+
+  results.forEach(item => {
+    if (existing.includes(item.id)) return;
+    const div = document.createElement('div');
+    div.className = 'skill-modal-item';
+    div.innerHTML = `<span>${esc(item.name)}</span><span class="cmd">${esc(item.command)}</span>`;
+    div.onclick = async () => {
+      if (!idea) return;
+      if (!idea.related_skills) idea.related_skills = [];
+      idea.related_skills.push(item.id);
+      await apiPut(`/api/ideas/${skillModalIdeaId}`, { related_skills: idea.related_skills });
+      closeSkillModal();
+      openDetail(skillModalIdeaId);
+    };
+    container.appendChild(div);
+  });
+}
+
+// ── Quick Add Modal ──
+
+function openAddModal() {
+  document.getElementById('add-modal').classList.add('open');
+  document.getElementById('add-url').value = '';
+  document.getElementById('add-notes').value = '';
+  document.getElementById('add-tags').value = '';
+  document.getElementById('url-preview').innerHTML = '';
+  setTimeout(() => document.getElementById('add-url').focus(), 100);
+}
+
+function closeAddModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('add-modal').classList.remove('open');
+}
+
+function previewUrl() {
+  const url = document.getElementById('add-url').value.trim();
+  const preview = document.getElementById('url-preview');
+  if (!url) { preview.innerHTML = ''; return; }
+  let type = 'web';
+  const lower = url.toLowerCase();
+  if (lower.includes('instagram.com')) type = 'instagram';
+  else if (lower.includes('youtube.com') || lower.includes('youtu.be')) type = 'youtube';
+  preview.innerHTML = `${SOURCE_ICONS[type]} Will auto-enrich as ${type}`;
+}
+
+async function submitIdea() {
+  const url = document.getElementById('add-url').value.trim();
+  const notes = document.getElementById('add-notes').value.trim();
+  const tags = document.getElementById('add-tags').value.trim();
+  const btn = document.getElementById('add-submit');
+
+  if (!url && !notes) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const resp = await apiPost('/api/ideas', { url, notes, tags });
+    if (resp.status === 409) {
+      const data = await resp.json();
+      alert('This URL is already saved.');
+      btn.disabled = false;
+      btn.textContent = 'Save';
+      return;
+    }
+    const idea = await resp.json();
+    allIdeas.unshift(idea);
+    applyFilters();
+    document.getElementById('add-modal').classList.remove('open');
+    if (idea.enrichment_status === 'running' || idea.enrichment_status === 'pending') {
+      startPolling(idea.id);
+    }
+  } catch (e) {
+    alert('Failed to save idea');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+}
+
+// ── Helpers ──
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function truncUrl(url) {
+  try {
+    const u = new URL(url);
+    const path = u.pathname.length > 30 ? u.pathname.substring(0, 30) + '...' : u.pathname;
+    return u.hostname.replace('www.', '') + path;
+  } catch { return url.substring(0, 50); }
+}
+
+function timeAgo(iso) {
+  if (!iso) return '';
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+  return new Date(iso).toLocaleDateString();
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// ── Theme ──
+
+function getPreferredTheme() {
+  const stored = localStorage.getItem('registry-theme');
+  const timestamp = localStorage.getItem('registry-theme-set');
+  if (stored && timestamp) {
+    const age = Date.now() - parseInt(timestamp, 10);
+    if (age < 24 * 60 * 60 * 1000) return stored;
+  }
+  localStorage.removeItem('registry-theme');
+  localStorage.removeItem('registry-theme-set');
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-icon').innerHTML = theme === 'dark' ? '&#9788;' : '&#9790;';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('registry-theme', next);
+  localStorage.setItem('registry-theme-set', Date.now().toString());
+  applyTheme(next);
+}
+
+// ── Keyboard ──
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA' && !document.activeElement.isContentEditable) {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+    return;
+  }
+  if (e.key === 'Escape') {
+    if (document.getElementById('skill-modal').classList.contains('open')) { closeSkillModal(); return; }
+    if (document.getElementById('add-modal').classList.contains('open')) { document.getElementById('add-modal').classList.remove('open'); return; }
+    if (detailOpen) { closeDetail(); return; }
+    document.getElementById('search-input').blur();
+  }
+});
+
+document.getElementById('search-input').addEventListener('input', debounce(() => applyFilters(), 150));
+document.getElementById('search-input').addEventListener('focus', () => {
+  document.getElementById('search-kbd').style.display = 'none';
+});
+document.getElementById('search-input').addEventListener('blur', () => {
+  if (!document.getElementById('search-input').value) {
+    document.getElementById('search-kbd').style.display = 'block';
+  }
+});
+
+// Close skill modal on outside click
+document.addEventListener('click', (e) => {
+  const modal = document.getElementById('skill-modal');
+  if (modal.classList.contains('open') && !modal.contains(e.target) && !e.target.classList.contains('add-skill-btn')) {
+    closeSkillModal();
+  }
+});
+
+// ── Init ──
+
+async function init() {
+  applyTheme(getPreferredTheme());
+  await fetchIdeas();
+}
+
+init();
+</script>
+</body>
+</html>

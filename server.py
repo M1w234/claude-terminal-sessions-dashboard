@@ -11,14 +11,17 @@ import glob
 import os
 import re
 import asyncio
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 import subprocess as sp
+import httpx
 
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import anthropic
 
@@ -36,6 +39,12 @@ HOOKS_DIR = CLAUDE_DIR / "hooks"
 PLUGINS_DIR = CLAUDE_DIR / "plugins" / "marketplaces"
 REGISTRY_FILE = Path(__file__).parent / "registry.json"
 STATIC_FILE = Path(__file__).parent / "registry-static.json"
+IDEAS_FILE = Path(__file__).parent / "ideas.json"
+
+APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN", "")
+APIFY_BASE = "https://api.apify.com/v2"
+
+_ideas_lock = asyncio.Lock()
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -789,6 +798,69 @@ def build_catalog():
                     "source": "plugin",
                 })
 
+    # Scan external plugins (MCP servers from the plugin marketplace)
+    if PLUGINS_DIR.exists():
+        for marketplace_dir in PLUGINS_DIR.iterdir():
+            ext_root = marketplace_dir / "external_plugins"
+            if not ext_root.exists():
+                continue
+            for ext_dir in sorted(ext_root.iterdir()):
+                if not ext_dir.is_dir():
+                    continue
+                mcp_file = ext_dir / ".mcp.json"
+                if not mcp_file.exists():
+                    continue
+
+                ext_id = f"mcp-{ext_dir.name}"
+                enrich = enrichments.get(ext_id, {})
+
+                # Extract server name from .mcp.json (two formats)
+                server_name = ext_dir.name
+                try:
+                    with open(mcp_file) as f:
+                        mcp_data = json.load(f)
+                    # Format 1: {"mcpServers": {"name": {...}}}
+                    if "mcpServers" in mcp_data:
+                        keys = list(mcp_data["mcpServers"].keys())
+                        if keys:
+                            server_name = keys[0]
+                    # Format 2: {"name": {...}} — top-level keys are server names
+                    else:
+                        keys = list(mcp_data.keys())
+                        if keys:
+                            server_name = keys[0]
+                except (IOError, json.JSONDecodeError):
+                    pass
+
+                # Read description from README.md
+                desc = ""
+                readme = ext_dir / "README.md"
+                if readme.exists():
+                    try:
+                        with open(readme) as f:
+                            lines = f.readlines()
+                        for line in lines:
+                            line = line.strip()
+                            if line and not line.startswith("#"):
+                                desc = line[:200]
+                                break
+                    except IOError:
+                        pass
+
+                catalog.append({
+                    "id": ext_id,
+                    "name": server_name.replace("-", " ").replace("_", " ").title(),
+                    "command": "(MCP server)",
+                    "description": desc or f"MCP server: {server_name}",
+                    "type": "mcp",
+                    "category": enrich.get("category", "mcp"),
+                    "subcategory": enrich.get("subcategory"),
+                    "useCases": enrich.get("useCases", []),
+                    "tags": enrich.get("tags", ["mcp", server_name]),
+                    "related": enrich.get("related", []),
+                    "source": "mcp",
+                })
+
     # Load user-configured static entries (MCP integrations, etc.)
     if STATIC_FILE.exists():
         try:
@@ -1227,6 +1299,21 @@ async def skill_builder(request: Request):
     if skill_context:
         system += f"\n\nREFERENCED SKILL CONTENT (full source):\n{skill_context}"
 
+    # Load referenced idea content
+    referenced_ideas = body.get("referencedIdeas", [])
+    if referenced_ideas:
+        async with _ideas_lock:
+            ideas = load_ideas()
+        idea_context = ""
+        for idea_id in referenced_ideas[:3]:
+            idea = next((i for i in ideas if i["id"] == idea_id), None)
+            if idea and idea.get("enriched_content"):
+                idea_context += f"\n\n--- IDEA: {idea.get('title', idea_id)} ---\n"
+                idea_context += f"URL: {idea.get('url', 'N/A')}\nNotes: {idea.get('notes', '')}\n"
+                idea_context += f"Content:\n{idea['enriched_content'][:10000]}\n--- END IDEA ---\n"
+        if idea_context:
+            system += f"\n\nREFERENCED IDEA CONTENT (user's saved research):\n{idea_context}"
+
     # Build conversation for claude -p
     conversation_parts = [f"<system>{system}</system>"]
     for msg in messages[-15:]:  # Last 15 messages for context management
@@ -1254,6 +1341,379 @@ async def skill_builder(request: Request):
         return {"error": "cli_error", "message": str(e)}
 
 
+# ── Ideas Workshop ──────────────────────────────────────────────────────────
+
+
+def load_ideas() -> list:
+    try:
+        with open(IDEAS_FILE) as f:
+            return json.load(f)
+    except (IOError, json.JSONDecodeError):
+        return []
+
+
+def save_ideas(ideas: list):
+    with open(IDEAS_FILE, "w") as f:
+        json.dump(ideas, f, indent=2)
+
+
+def generate_idea_id() -> str:
+    return uuid.uuid4().hex[:12]
+
+
+def detect_source_type(url: str) -> str:
+    if not url:
+        return "manual"
+    lower = url.lower()
+    if "instagram.com/reel" in lower or "instagram.com/p/" in lower:
+        return "instagram"
+    if "youtube.com/watch" in lower or "youtu.be/" in lower or "youtube.com/shorts" in lower:
+        return "youtube"
+    return "web"
+
+
+def normalize_url(url: str) -> str:
+    """Normalize URL for deduplication."""
+    if not url:
+        return ""
+    parsed = urlparse(url)
+    # Strip tracking params and trailing slash
+    path = parsed.path.rstrip("/")
+    # Rebuild without fragments and common tracking params
+    clean_query = "&".join(
+        p for p in (parsed.query or "").split("&")
+        if p and not any(p.startswith(t) for t in ("utm_", "ref=", "fbclid=", "igshid="))
+    )
+    return f"{parsed.scheme}://{parsed.netloc}{path}" + (f"?{clean_query}" if clean_query else "")
+
+
+def _auto_title(url: str, notes: str, source_type: str) -> str:
+    """Generate a title from URL or notes."""
+    if notes:
+        return notes[:60].strip()
+    if url:
+        parsed = urlparse(url)
+        host = parsed.netloc.replace("www.", "")
+        path = parsed.path.strip("/")[:40]
+        return f"{host}/{path}" if path else host
+    return "Untitled idea"
+
+
+# ── Enrichment Engine ───────────────────────────────────────────────────────
+
+APIFY_ACTORS = {
+    "youtube": "karamelo~youtube-transcripts",
+    "instagram": "sian.agency~instagram-ai-transcript-extractor",
+    "web": "apify~website-content-crawler",
+}
+
+
+def _build_apify_input(source_type: str, url: str) -> dict:
+    if source_type == "youtube":
+        return {"urls": [url]}
+    elif source_type == "instagram":
+        return {"instagramUrl": url, "fastProcessing": True}
+    elif source_type == "web":
+        return {"startUrls": [{"url": url}], "maxCrawlPages": 1, "crawlerType": "cheerio"}
+    return {}
+
+
+def _extract_enriched_content(source_type: str, items: list) -> str:
+    """Extract the useful text from Apify dataset items."""
+    if not items:
+        return ""
+
+    if source_type == "youtube":
+        parts = []
+        for item in items:
+            title = item.get("title") or item.get("videoTitle", "")
+            channel = item.get("channelName", "")
+            if title:
+                parts.append(f"Title: {title}")
+            if channel:
+                parts.append(f"Channel: {channel}")
+            # Handle captions as list of strings or single transcript string
+            captions = item.get("captions", [])
+            if isinstance(captions, list):
+                parts.append(" ".join(str(c) for c in captions))
+            elif isinstance(captions, str):
+                parts.append(captions)
+            # Fallback to transcript/text fields
+            transcript = item.get("transcript") or item.get("text", "")
+            if transcript and not captions:
+                parts.append(transcript)
+        return "\n\n".join(parts)[:50000]
+
+    elif source_type == "instagram":
+        parts = []
+        for item in items:
+            transcript = item.get("transcript") or item.get("text", "")
+            if transcript:
+                parts.append(transcript)
+        return "\n\n".join(parts)[:50000]
+
+    elif source_type == "web":
+        parts = []
+        for item in items:
+            title = item.get("metadata", {}).get("title") or item.get("title", "")
+            content = item.get("markdown") or item.get("text", "")
+            if title:
+                parts.append(f"# {title}")
+            if content:
+                parts.append(content)
+        return "\n\n".join(parts)[:50000]
+
+    return ""
+
+
+async def _run_apify_actor(actor_id: str, input_data: dict, timeout: int = 300) -> list:
+    """Start an Apify actor run and poll until completion."""
+    if not APIFY_API_TOKEN:
+        raise RuntimeError("APIFY_API_TOKEN not set")
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        # Start run
+        resp = await client.post(
+            f"{APIFY_BASE}/acts/{actor_id}/runs",
+            params={"token": APIFY_API_TOKEN},
+            json=input_data,
+        )
+        resp.raise_for_status()
+        run_id = resp.json()["data"]["id"]
+
+        # Poll for completion
+        elapsed = 0
+        while elapsed < timeout:
+            await asyncio.sleep(5)
+            elapsed += 5
+            status_resp = await client.get(
+                f"{APIFY_BASE}/actor-runs/{run_id}",
+                params={"token": APIFY_API_TOKEN},
+            )
+            status_resp.raise_for_status()
+            data = status_resp.json()["data"]
+            status = data["status"]
+
+            if status == "SUCCEEDED":
+                dataset_id = data.get("defaultDatasetId")
+                if not dataset_id:
+                    return []
+                items_resp = await client.get(
+                    f"{APIFY_BASE}/datasets/{dataset_id}/items",
+                    params={"token": APIFY_API_TOKEN, "format": "json"},
+                )
+                items_resp.raise_for_status()
+                return items_resp.json()
+
+            if status in ("FAILED", "ABORTED", "TIMED-OUT"):
+                raise RuntimeError(f"Apify actor {actor_id} {status}")
+
+        raise TimeoutError(f"Apify actor {actor_id} did not complete within {timeout}s")
+
+
+async def _enrich_idea(idea_id: str):
+    """Background task: enrich an idea with content from its URL."""
+    try:
+        async with _ideas_lock:
+            ideas = load_ideas()
+            idea = next((i for i in ideas if i["id"] == idea_id), None)
+            if not idea or not idea.get("url"):
+                return
+            if idea.get("enrichment_status") == "running":
+                return  # Already running
+            idea["enrichment_status"] = "running"
+            save_ideas(ideas)
+
+        source_type = idea["source_type"]
+        actor_id = APIFY_ACTORS.get(source_type)
+        if not actor_id:
+            raise RuntimeError(f"No actor for source type: {source_type}")
+
+        input_data = _build_apify_input(source_type, idea["url"])
+        items = await _run_apify_actor(actor_id, input_data)
+        content = _extract_enriched_content(source_type, items)
+
+        async with _ideas_lock:
+            ideas = load_ideas()
+            idea = next((i for i in ideas if i["id"] == idea_id), None)
+            if idea:
+                idea["enriched_content"] = content
+                idea["enrichment_status"] = "done" if content else "failed"
+                idea["updated"] = datetime.now(timezone.utc).isoformat()
+                save_ideas(ideas)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        async with _ideas_lock:
+            ideas = load_ideas()
+            idea = next((i for i in ideas if i["id"] == idea_id), None)
+            if idea:
+                idea["enrichment_status"] = "failed"
+                idea["enrichment_error"] = str(e)[:200]
+                idea["updated"] = datetime.now(timezone.utc).isoformat()
+                save_ideas(ideas)
+
+
+# ── Ideas API Routes ────────────────────────────────────────────────────────
+
+
+@app.get("/api/ideas")
+async def list_ideas(
+    status: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    tag: Optional[str] = Query(None),
+):
+    async with _ideas_lock:
+        ideas = load_ideas()
+
+    if status:
+        ideas = [i for i in ideas if i.get("status") == status]
+    if tag:
+        ideas = [i for i in ideas if tag in i.get("tags", [])]
+    if search:
+        q = search.lower()
+        ideas = [
+            i for i in ideas
+            if q in (i.get("title") or "").lower()
+            or q in (i.get("notes") or "").lower()
+            or q in (i.get("url") or "").lower()
+            or any(q in t.lower() for t in i.get("tags", []))
+        ]
+
+    # Sort by updated desc
+    ideas.sort(key=lambda i: i.get("updated", ""), reverse=True)
+    return {"ideas": ideas, "total": len(ideas)}
+
+
+@app.get("/api/ideas/{idea_id}")
+async def get_idea(idea_id: str):
+    async with _ideas_lock:
+        ideas = load_ideas()
+    idea = next((i for i in ideas if i["id"] == idea_id), None)
+    if not idea:
+        return JSONResponse({"error": "Idea not found"}, status_code=404)
+    return idea
+
+
+@app.post("/api/ideas")
+async def create_idea(request: Request):
+    body = await request.json()
+    url = (body.get("url") or "").strip()
+    notes = (body.get("notes") or "").strip()
+    tags = body.get("tags") or []
+    title = (body.get("title") or "").strip()
+
+    if isinstance(tags, str):
+        tags = [t.strip() for t in tags.split(",") if t.strip()]
+
+    if not url and not notes:
+        return JSONResponse({"error": "Provide a URL or notes"}, status_code=400)
+
+    source_type = detect_source_type(url)
+    normalized = normalize_url(url)
+
+    async with _ideas_lock:
+        ideas = load_ideas()
+
+        # Check for duplicate URL
+        if normalized:
+            existing = next(
+                (i for i in ideas if normalize_url(i.get("url", "")) == normalized),
+                None,
+            )
+            if existing:
+                return JSONResponse(
+                    {"error": "duplicate", "message": "URL already saved", "existing_id": existing["id"]},
+                    status_code=409,
+                )
+
+        now = datetime.now(timezone.utc).isoformat()
+        idea = {
+            "id": generate_idea_id(),
+            "title": title or _auto_title(url, notes, source_type),
+            "url": url,
+            "source_type": source_type,
+            "notes": notes,
+            "status": "inbox",
+            "tags": tags,
+            "related_skills": [],
+            "enriched_content": "",
+            "enrichment_status": "pending" if url else "none",
+            "enrichment_error": "",
+            "created": now,
+            "updated": now,
+        }
+        ideas.append(idea)
+        save_ideas(ideas)
+
+    # Fire background enrichment
+    if url and source_type != "manual":
+        asyncio.create_task(_enrich_idea(idea["id"]))
+
+    return idea
+
+
+@app.put("/api/ideas/{idea_id}")
+async def update_idea(idea_id: str, request: Request):
+    body = await request.json()
+    async with _ideas_lock:
+        ideas = load_ideas()
+        idea = next((i for i in ideas if i["id"] == idea_id), None)
+        if not idea:
+            return JSONResponse({"error": "Idea not found"}, status_code=404)
+
+        for field in ("title", "notes", "status", "tags", "related_skills"):
+            if field in body:
+                idea[field] = body[field]
+        idea["updated"] = datetime.now(timezone.utc).isoformat()
+        save_ideas(ideas)
+
+    return idea
+
+
+@app.delete("/api/ideas/{idea_id}")
+async def delete_idea(idea_id: str):
+    async with _ideas_lock:
+        ideas = load_ideas()
+        ideas = [i for i in ideas if i["id"] != idea_id]
+        save_ideas(ideas)
+    return {"deleted": True}
+
+
+@app.post("/api/ideas/{idea_id}/enrich")
+async def enrich_idea(idea_id: str):
+    async with _ideas_lock:
+        ideas = load_ideas()
+        idea = next((i for i in ideas if i["id"] == idea_id), None)
+        if not idea:
+            return JSONResponse({"error": "Idea not found"}, status_code=404)
+        if not idea.get("url"):
+            return JSONResponse({"error": "No URL to enrich"}, status_code=400)
+        idea["enrichment_status"] = "pending"
+        idea["enrichment_error"] = ""
+        save_ideas(ideas)
+
+    asyncio.create_task(_enrich_idea(idea_id))
+    return {"status": "enrichment started"}
+
+
+# ── Startup: reset stuck enrichments ────────────────────────────────────────
+
+
+@app.on_event("startup")
+async def startup_reset_enrichments():
+    async with _ideas_lock:
+        ideas = load_ideas()
+        changed = False
+        for idea in ideas:
+            if idea.get("enrichment_status") == "running":
+                idea["enrichment_status"] = "pending"
+                changed = True
+        if changed:
+            save_ideas(ideas)
+
+
 # ── Serve Frontend ───────────────────────────────────────────────────────────
 
 
@@ -1267,3 +1727,8 @@ def serve_frontend():
 @app.get("/registry")
 def serve_registry():
     return FileResponse(DASHBOARD_DIR / "registry.html")
+
+
+@app.get("/workshop")
+def serve_workshop():
+    return FileResponse(DASHBOARD_DIR / "workshop.html")

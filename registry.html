@@ -1088,6 +1088,7 @@ body {
 <div class="topbar">
   <div class="topbar-left">
     <a href="/" class="topbar-nav">Sessions</a>
+    <a href="/workshop" class="topbar-nav">Workshop <span style="font-size:10px;background:#E8DFD3;color:#5C5650;padding:1px 5px;border-radius:4px;margin-left:2px;vertical-align:middle">WIP</span></a>
     <span class="topbar-title">Registry</span>
   </div>
   <div class="topbar-right">
@@ -1802,14 +1803,17 @@ async function runSmartSearch(query) {
 let wbOpen = false;
 let wbMode = 'create';
 let wbReferencedSkills = [];
+let wbReferencedIdeas = [];
 let wbMessages = [];
 let wbOutputContent = '';
 let wbSending = false;
+let _ideasCache = null;
 
 function saveWbState() {
   localStorage.setItem('skill-workbench-state', JSON.stringify({
     mode: wbMode,
     referencedSkills: wbReferencedSkills,
+    referencedIdeas: wbReferencedIdeas,
     messages: wbMessages,
     outputContent: wbOutputContent,
   }));
@@ -1821,6 +1825,7 @@ function loadWbState() {
     if (s) {
       wbMode = s.mode || 'create';
       wbReferencedSkills = s.referencedSkills || [];
+      wbReferencedIdeas = s.referencedIdeas || [];
       wbMessages = s.messages || [];
       wbOutputContent = s.outputContent || '';
     }
@@ -1866,11 +1871,31 @@ function renderWb() {
     chip.innerHTML = `${item ? item.command || '/' + id : '/' + id}<span class="wb-chip-x" onclick="wbRemoveRef('${id}')">&times;</span>`;
     chips.appendChild(chip);
   });
+  // Render referenced ideas
+  wbReferencedIdeas.forEach(id => {
+    const chip = document.createElement('span');
+    chip.className = 'wb-chip';
+    chip.style.borderColor = 'var(--indigo)';
+    chip.style.color = 'var(--indigo)';
+    chip.innerHTML = `&#128161; ${id.substring(0,8)}...<span class="wb-chip-x" onclick="wbRemoveIdea('${id}')">&times;</span>`;
+    // Try to load the title async
+    fetch(`/api/ideas/${id}`).then(r => r.json()).then(idea => {
+      if (idea && idea.title) chip.innerHTML = `&#128161; ${escHtml(idea.title.substring(0,25))}<span class="wb-chip-x" onclick="wbRemoveIdea('${id}')">&times;</span>`;
+    }).catch(() => {});
+    chips.appendChild(chip);
+  });
+
   const addBtn = document.createElement('span');
   addBtn.className = 'wb-add-ref';
-  addBtn.textContent = '+ Add';
+  addBtn.textContent = '+ Add skill';
   addBtn.onclick = openRefModal;
   chips.appendChild(addBtn);
+
+  const addIdeaBtn = document.createElement('span');
+  addIdeaBtn.className = 'wb-add-ref';
+  addIdeaBtn.textContent = '+ Add idea';
+  addIdeaBtn.onclick = openIdeaRefModal;
+  chips.appendChild(addIdeaBtn);
 
   // Render messages
   const chat = document.getElementById('wb-chat');
@@ -1930,6 +1955,7 @@ async function wbSend(overrideText) {
       body: JSON.stringify({
         messages: wbMessages,
         referencedSkills: wbReferencedSkills,
+        referencedIdeas: wbReferencedIdeas,
         mode: wbMode,
       }),
     });
@@ -1989,6 +2015,7 @@ function wbClearConversation() {
   wbMessages = [];
   wbOutputContent = '';
   wbReferencedSkills = [];
+  wbReferencedIdeas = [];
   renderWb();
   saveWbState();
 }
@@ -1997,6 +2024,62 @@ function wbRemoveRef(id) {
   wbReferencedSkills = wbReferencedSkills.filter(r => r !== id);
   renderWb();
   saveWbState();
+}
+
+function wbRemoveIdea(id) {
+  wbReferencedIdeas = wbReferencedIdeas.filter(r => r !== id);
+  renderWb();
+  saveWbState();
+}
+
+// Idea reference modal
+async function openIdeaRefModal() {
+  if (!_ideasCache) {
+    try {
+      const resp = await fetch('/api/ideas');
+      const data = await resp.json();
+      _ideasCache = data.ideas || [];
+    } catch (e) { _ideasCache = []; }
+  }
+  // Reuse the ref modal with ideas
+  const modal = document.getElementById('wb-ref-modal');
+  modal.classList.add('open');
+  const input = document.getElementById('wb-ref-search');
+  input.value = '';
+  input.placeholder = 'Search ideas...';
+  input.oninput = wbIdeaRefSearch;
+  input.focus();
+  wbIdeaRefSearch();
+}
+
+function wbIdeaRefSearch() {
+  const q = (document.getElementById('wb-ref-search').value || '').trim().toLowerCase();
+  const ideas = (_ideasCache || []).filter(i => {
+    if (wbReferencedIdeas.includes(i.id)) return false;
+    if (!q) return true;
+    return (i.title || '').toLowerCase().includes(q) || (i.notes || '').toLowerCase().includes(q);
+  }).slice(0, 10);
+
+  const container = document.getElementById('wb-ref-results');
+  container.innerHTML = '';
+  ideas.forEach(idea => {
+    const div = document.createElement('div');
+    div.className = 'wb-ref-item';
+    const sourceIcon = idea.source_type === 'youtube' ? '&#9654;' : idea.source_type === 'instagram' ? '&#128247;' : '&#127760;';
+    div.innerHTML = `<span>${sourceIcon}</span><span>${escHtml(idea.title || 'Untitled')}</span><span class="wb-ref-item-cmd" style="color:var(--indigo)">${idea.status}</span>`;
+    div.onclick = () => {
+      if (wbReferencedIdeas.length < 3) {
+        wbReferencedIdeas.push(idea.id);
+        renderWb();
+        saveWbState();
+        closeRefModal();
+        // Reset search handler
+        document.getElementById('wb-ref-search').oninput = wbRefSearch;
+        document.getElementById('wb-ref-search').placeholder = 'Search skills to reference...';
+      }
+    };
+    container.appendChild(div);
+  });
 }
 
 // Drag-and-drop onto workbench refs
@@ -2129,6 +2212,17 @@ async function init() {
 
   // Restore workbench state
   loadWbState();
+
+  // Handle URL params from Workshop "Open in Skill Planner"
+  const params = new URLSearchParams(location.search);
+  if (params.get('openWorkbench')) {
+    const ideaId = params.get('ideaRef');
+    if (ideaId && !wbReferencedIdeas.includes(ideaId)) {
+      wbReferencedIdeas.push(ideaId);
+    }
+    openWorkbench(params.get('openWorkbench'));
+    history.replaceState({}, '', '/registry');
+  }
 }
 
 init();
