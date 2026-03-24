@@ -700,53 +700,6 @@ body {
   background: var(--accent-light);
 }
 
-/* ── Smart Search Toggle ── */
-.smart-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-dim);
-  cursor: pointer;
-  padding: 4px 10px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-surface);
-  margin-left: 12px;
-  transition: all 0.15s;
-  user-select: none;
-  vertical-align: middle;
-}
-.smart-toggle:hover { border-color: var(--text-faint); }
-.smart-toggle.active {
-  background: var(--indigo);
-  color: #fff;
-  border-color: var(--indigo);
-}
-.smart-toggle .dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--text-faint);
-  transition: background 0.15s;
-}
-.smart-toggle.active .dot { background: #fff; }
-
-.smart-loading {
-  text-align: center;
-  padding: 16px;
-  color: var(--text-dim);
-  font-size: 13px;
-  display: none;
-}
-.smart-loading.visible { display: block; }
-
-.smart-relevance {
-  font-size: 12px;
-  font-style: italic;
-  color: var(--text-dim);
-  margin-top: 4px;
-  padding: 0 2px;
-}
-
 /* ── Workbench Panel ── */
 .wb-overlay {
   position: fixed;
@@ -1141,13 +1094,7 @@ body {
       <span class="search-kbd" id="search-kbd">/</span>
       <span class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear search">&times;</span>
     </div>
-    <div style="display:flex;align-items:center;justify-content:center;margin-top:10px;gap:8px">
-      <div class="result-count" id="result-count"></div>
-      <span class="smart-toggle" id="smart-toggle" onclick="toggleSmartSearch()">
-        <span class="dot"></span> Smart Search
-      </span>
-    </div>
-    <div class="smart-loading" id="smart-loading">Asking Claude to find the best tools...</div>
+    <div class="result-count" id="result-count" style="text-align:center;margin-top:10px"></div>
   </div>
 
   <div class="filters" id="filters"></div>
@@ -1796,13 +1743,7 @@ document.getElementById('search-input').addEventListener('input', debounce(() =>
   applyFilters();
 }, 150));
 
-// Smart search on Enter
 document.getElementById('search-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && smartSearchEnabled) {
-    e.preventDefault();
-    const q = document.getElementById('search-input').value.trim();
-    if (q) runSmartSearch(q);
-  }
   if (e.key === 'Escape') {
     clearSearch();
     e.target.blur();
@@ -1821,52 +1762,6 @@ document.getElementById('search-input').addEventListener('blur', () => {
 function debounce(fn, ms) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-
-// ── Smart Search ──
-
-let smartSearchEnabled = false;
-let smartSearchPending = false;
-
-function toggleSmartSearch() {
-  smartSearchEnabled = !smartSearchEnabled;
-  document.getElementById('smart-toggle').classList.toggle('active', smartSearchEnabled);
-}
-
-async function runSmartSearch(query) {
-  if (!smartSearchEnabled || !query.trim() || smartSearchPending) return;
-  smartSearchPending = true;
-  const loadEl = document.getElementById('smart-loading');
-  loadEl.classList.add('visible');
-
-  try {
-    const resp = await fetch('/api/smart-search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    });
-    if (!resp.ok) throw new Error('Server error');
-    const data = await resp.json();
-    if (data.error) throw new Error(data.message || data.error);
-
-    // Render smart results
-    const results = data.results || [];
-    const smartItems = results.map(r => {
-      const item = allItems.find(i => i.id === r.id);
-      return item ? { ...item, _relevance: r.relevance } : null;
-    }).filter(Boolean);
-
-    if (smartItems.length > 0) {
-      renderCards(smartItems);
-      document.getElementById('result-count').textContent = `${smartItems.length} smart results`;
-    }
-  } catch (e) {
-    // Silently fall back to keyword search
-    console.warn('Smart search failed:', e);
-  } finally {
-    smartSearchPending = false;
-    loadEl.classList.remove('visible');
-  }
 }
 
 // ── Workbench State ──
