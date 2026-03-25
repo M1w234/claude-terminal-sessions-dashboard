@@ -111,10 +111,7 @@ _AUTO_SESSION_PATTERNS = [
 
 def _detect_auto_tag(project_path: str, first_prompt: str) -> str:
     """Detect if a session should be auto-tagged."""
-    # Sessions created from the dashboard directory are Skill Planner sessions
-    if project_path and ".claude/claude-sessions-manager" in project_path:
-        return "Skill Planner"
-    # Also check prompt patterns as a fallback
+    # Only tag sessions whose first prompt matches Skill Planner patterns
     lower = (first_prompt or "").lower()
     for pattern in _AUTO_SESSION_PATTERNS:
         if pattern in lower:

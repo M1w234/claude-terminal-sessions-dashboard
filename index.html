@@ -636,6 +636,65 @@
     max-width: 120px;
   }
 
+  /* ── Hide session button ── */
+  .session-item {
+    position: relative;
+  }
+
+  .session-item .hide-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-faint);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.12s ease;
+    z-index: 2;
+  }
+
+  .session-item:hover .hide-btn { opacity: 1; }
+
+  .session-item .hide-btn:hover {
+    background: var(--bg-active);
+    color: var(--text-secondary);
+  }
+
+  .session-item .hide-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Expanded card hide button */
+  .app.sidebar-expanded .session-item .hide-btn {
+    top: 14px;
+    right: 14px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+  }
+
+  .app.sidebar-expanded .session-item .hide-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Hidden session styling (when showing hidden) */
+  .session-item.is-hidden {
+    opacity: 0.45;
+  }
+
+  .session-item.is-hidden:hover {
+    opacity: 0.7;
+  }
+
   .sidebar-footer {
     padding: 12px 14px;
     border-top: 1px solid var(--border);
@@ -643,6 +702,27 @@
     color: var(--text-faint);
     text-align: center;
     letter-spacing: 0.02em;
+  }
+
+  .sidebar-footer .hidden-toggle {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 2px;
+    transition: all 0.12s ease;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+  }
+
+  .sidebar-footer .hidden-toggle:hover {
+    color: var(--accent);
+    background: var(--accent-faint);
   }
 
   /* ── Main Content ── */
@@ -1408,6 +1488,8 @@ let currentView = 'conversation';
 let activeWorkspace = null;  // null = show all
 let hideAutoTagged = true;   // hide Skill Planner sessions by default
 let sidebarExpanded = false;
+let showHidden = false;
+let hiddenSessionIds = new Set(JSON.parse(localStorage.getItem('hidden-sessions') || '[]'));
 
 // ── API ──
 const api = {
@@ -1523,14 +1605,27 @@ function renderSessionList() {
   const list = document.getElementById('sessionList');
   const footer = document.getElementById('sidebarFooter');
 
-  const filtered = hideAutoTagged
+  let filtered = hideAutoTagged
     ? allSessions.filter(s => !s.autoTag)
     : allSessions;
-  const hiddenCount = allSessions.length - filtered.length;
+  const autoHiddenCount = allSessions.length - filtered.length;
 
-  list.innerHTML = filtered.map(s => `
-    <div class="session-item ${s.id === currentSessionId ? 'active' : ''}"
+  const userHiddenCount = filtered.filter(s => hiddenSessionIds.has(s.id)).length;
+  if (!showHidden) {
+    filtered = filtered.filter(s => !hiddenSessionIds.has(s.id));
+  }
+
+  const hideBtnSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+  const showBtnSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+  list.innerHTML = filtered.map(s => {
+    const isHidden = hiddenSessionIds.has(s.id);
+    const btnSvg = isHidden ? showBtnSvg : hideBtnSvg;
+    const btnTitle = isHidden ? 'Unhide session' : 'Hide session';
+    return `
+    <div class="session-item ${s.id === currentSessionId ? 'active' : ''} ${isHidden ? 'is-hidden' : ''}"
          data-id="${s.id}" onclick="selectSession('${s.id}')">
+      <button class="hide-btn" onclick="hideSession(event, '${s.id}')" title="${btnTitle}">${btnSvg}</button>
       <div class="name">${esc(s.name)}</div>
       <div class="meta">
         <span>${timeAgo(s.modified || s.created)}</span>
@@ -1576,12 +1671,36 @@ function renderSessionList() {
         </div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 
   let footerText = `${filtered.length} sessions`;
   if (activeWorkspace) footerText += ` in ${activeWorkspace}`;
-  if (hiddenCount > 0) footerText += ` (${hiddenCount} hidden)`;
-  footer.textContent = footerText;
+  if (autoHiddenCount > 0) footerText += ` (${autoHiddenCount} auto-hidden)`;
+  if (userHiddenCount > 0) {
+    footerText += showHidden
+      ? ` &middot; showing ${userHiddenCount} hidden`
+      : '';
+    footer.innerHTML = footerText +
+      ` &middot; <button class="hidden-toggle" onclick="toggleShowHidden()">${showHidden ? 'Hide' : 'Show'} ${userHiddenCount} hidden</button>`;
+  } else {
+    footer.textContent = footerText;
+  }
+}
+
+function hideSession(e, sessionId) {
+  e.stopPropagation();
+  if (hiddenSessionIds.has(sessionId)) {
+    hiddenSessionIds.delete(sessionId);
+  } else {
+    hiddenSessionIds.add(sessionId);
+  }
+  localStorage.setItem('hidden-sessions', JSON.stringify([...hiddenSessionIds]));
+  renderSessionList();
+}
+
+function toggleShowHidden() {
+  showHidden = !showHidden;
+  renderSessionList();
 }
 
 function toggleAutoTagged() {
