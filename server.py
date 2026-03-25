@@ -112,7 +112,7 @@ _AUTO_SESSION_PATTERNS = [
 def _detect_auto_tag(project_path: str, first_prompt: str) -> str:
     """Detect if a session should be auto-tagged."""
     # Sessions created from the dashboard directory are Skill Planner sessions
-    if project_path and ".claude/dashboard" in project_path:
+    if project_path and ".claude/claude-sessions-manager" in project_path:
         return "Skill Planner"
     # Also check prompt patterns as a fallback
     lower = (first_prompt or "").lower()
@@ -134,8 +134,6 @@ def find_all_sessions():
     for sid, entry in index_entries.items():
         seen_ids.add(sid)
         auto_name = auto_names.get(sid, "")
-        if auto_name:
-            auto_name = auto_name.replace("-", " ").title()
         project_path = entry.get("projectPath", "")
         first_prompt = entry.get("firstPrompt", "")
         sessions.append({
@@ -213,8 +211,6 @@ def find_all_sessions():
             pass
 
         auto_name = auto_names.get(sid, "")
-        if auto_name:
-            auto_name = auto_name.replace("-", " ").title()
 
         sessions.append({
             "id": sid,
