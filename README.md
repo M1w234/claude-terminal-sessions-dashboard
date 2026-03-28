@@ -9,7 +9,7 @@ A local web dashboard for browsing your Claude Code sessions and discovering you
 Paste this into Claude Code:
 
 ```
-Clone https://github.com/M1w234/claude-terminal-sessions-dashboard and run the setup.sh script to install it. It's a web dashboard for browsing my Claude Code sessions and a registry of all my skills/tools. If I'm missing any dependencies like python3, fastapi, or uvicorn, help me install them first. After setup, open http://localhost:3456 in my browser.
+Clone https://github.com/M1w234/claude-terminal-sessions-dashboard and run the setup.sh script to install it. It's a web dashboard for browsing my Claude Code sessions and a catalog of all my skills/tools. If I'm missing any dependencies like python3, fastapi, or uvicorn, help me install them first. After setup, open http://localhost:3456 in my browser.
 ```
 
 That's it. Claude Code handles the rest.
@@ -25,8 +25,8 @@ That's it. Claude Code handles the rest.
 - **Workspace Filters** — Filter sessions by workspace
 - **AI Summaries** — Generate quick summaries of any session
 
-### Skills Registry (`localhost:3456/registry`)
-- **Auto-detected catalog** — Automatically discovers all your skills, commands, hooks, and plugins
+### Tools (`localhost:3456/tools`)
+- **Auto-detected catalog** — Automatically discovers all your skills, commands, hooks, plugins, and MCP servers
 - **Search** — Keyword search with synonym expansion, or LLM-powered Smart Search
 - **Category filters** — Filter by Social Media, Lead Gen, SEO, Content, Dev Tools, CLI, Hooks, Plugins, and more
 - **Detail panels** — Click any tool for full description, use cases, related tools, and copy-to-clipboard
@@ -34,9 +34,9 @@ That's it. Claude Code handles the rest.
 - **Dark mode** — Toggle or auto-detects from OS preference
 - **Keyboard navigation** — `/` to search, arrow keys to browse, `Esc` to close
 
-## How the Registry Works
+## How Auto-Detection Works
 
-The registry **automatically detects** everything on your machine:
+The tools page **automatically detects** everything on your machine:
 
 | Source | Auto-detected from |
 |--------|-------------------|
@@ -44,13 +44,14 @@ The registry **automatically detects** everything on your machine:
 | Commands | `~/.claude/commands/*.md` |
 | Hooks | `~/.claude/hooks/*.sh` |
 | Plugins | `~/.claude/plugins/marketplaces/*/plugins/` |
-| CLI commands | `registry-static.json` (ships with universal Claude Code commands) |
+| MCP servers | `~/.claude/plugins/marketplaces/*/external_plugins/` |
+| CLI commands | `tools-static.json` (ships with universal Claude Code commands) |
 
 **No configuration needed** — just install and your tools appear.
 
-### Adding MCP Integrations
+### Adding Cloud MCP Integrations
 
-MCP integrations (Notion, Canva, Slack, etc.) vary per user, so they're configured in `registry-static.json`. Add entries like:
+Local MCP servers (installed via plugins) are auto-detected. Cloud-hosted integrations (Notion, Canva, Slack, etc.) vary per user, so they're configured in `tools-static.json`. Add entries like:
 
 ```json
 {
@@ -69,7 +70,7 @@ MCP integrations (Notion, Canva, Slack, etc.) vary per user, so they're configur
 
 ### Enriching Skill Metadata
 
-The auto-scan gets each skill's name and description from its frontmatter. For richer search (use cases, tags, related tools), add entries to `registry.json`:
+The auto-scan gets each skill's name and description from its frontmatter. For richer search (use cases, tags, related tools), add entries to `tools.json`:
 
 ```json
 {
@@ -100,7 +101,7 @@ pip install fastapi uvicorn anthropic
 ./setup.sh
 ```
 
-Then open **http://localhost:3456** (sessions) or **http://localhost:3456/registry** (skills).
+Then open **http://localhost:3456** (sessions) or **http://localhost:3456/tools** (tools).
 
 ## Architecture
 
@@ -108,7 +109,7 @@ Two lightweight servers run on localhost:
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| Dashboard | 3456 | Web UI + REST API for sessions and skill catalog |
+| Dashboard | 3456 | Web UI + REST API for sessions and tools catalog |
 | Terminal | 3457 | WebSocket server for the embedded terminal |
 
 Both are managed by macOS LaunchAgents and start automatically on login.
@@ -118,7 +119,7 @@ Both are managed by macOS LaunchAgents and start automatically on login.
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/sessions` | GET | List all sessions with search/filter |
-| `/api/catalog` | GET | Auto-scanned skill catalog |
+| `/api/catalog` | GET | Auto-scanned tools catalog |
 | `/api/skill/{id}/content` | GET | Full skill.md content |
 | `/api/smart-search` | POST | LLM-powered search via Claude CLI |
 | `/api/skill-builder` | POST | Skill Planner conversation |
@@ -130,7 +131,7 @@ Both are managed by macOS LaunchAgents and start automatically on login.
 - **Cmd+`** — Toggle terminal
 - **Esc** — Clear search
 
-### Registry
+### Tools
 - **/** — Focus search
 - **Arrow keys** — Navigate cards
 - **Enter** — Open detail panel
@@ -141,9 +142,10 @@ Both are managed by macOS LaunchAgents and start automatically on login.
 | File | Purpose |
 |------|---------|
 | `index.html` | Sessions dashboard frontend |
-| `registry.html` | Skills registry frontend |
+| `tools.html` | Tools catalog frontend |
+| `workshop.html` | Ideas Workshop frontend (WIP) |
 | `server.py` | FastAPI backend (sessions + catalog + smart search + skill builder) |
 | `terminal_server.py` | WebSocket terminal server |
-| `registry.json` | Enrichment data for skills (useCases, tags, related) |
-| `registry-static.json` | User-configurable entries (CLI commands, MCP integrations) |
+| `tools.json` | Enrichment data for skills (useCases, tags, related) |
+| `tools-static.json` | User-configurable entries (CLI commands, cloud MCP integrations) |
 | `setup.sh` | Installation script (copies files, creates LaunchAgents) |

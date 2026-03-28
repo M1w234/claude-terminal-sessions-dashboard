@@ -79,6 +79,11 @@
     grid-template-columns: 320px 1fr;
     grid-template-rows: auto 1fr;
     height: 100vh;
+    transition: grid-template-columns 0.2s ease;
+  }
+
+  .app.sidebar-expanded {
+    grid-template-columns: 65vw 1fr;
   }
 
   /* ── Top Bar ── */
@@ -160,6 +165,236 @@
 
   .search-box {
     padding: 14px 14px 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .search-box input { flex: 1; }
+
+  .expand-toggle {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .expand-toggle:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-faint);
+    color: var(--text-secondary);
+  }
+
+  .expand-toggle.active {
+    background: var(--accent-faint);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .expand-toggle svg { width: 16px; height: 16px; }
+
+  /* ── Expanded sidebar ── */
+  .app.sidebar-expanded .session-list {
+    padding: 12px 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+    align-content: start;
+  }
+
+  .app.sidebar-expanded .session-item {
+    padding: 0;
+    margin-bottom: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.18s ease;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .app.sidebar-expanded .session-item:hover {
+    border-color: var(--border);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  .app.sidebar-expanded .session-item.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light), var(--shadow-md);
+    transform: none;
+  }
+
+  /* Card top accent stripe */
+  .app.sidebar-expanded .session-item .card-accent {
+    display: block;
+    height: 1.5px;
+    background: var(--border-light);
+    margin: 0 22px;
+    transition: background 0.15s ease;
+  }
+
+  .app.sidebar-expanded .session-item:hover .card-accent {
+    background: var(--accent-light);
+  }
+
+  .app.sidebar-expanded .session-item.active .card-accent {
+    background: var(--accent);
+    opacity: 0.4;
+  }
+
+  .app.sidebar-expanded .session-item .name {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 16.5px;
+    font-weight: 500;
+    font-optical-sizing: auto;
+    margin-bottom: 0;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    padding: 18px 22px 14px;
+    color: var(--text) !important;
+  }
+
+  /* Hide compact meta row in expanded mode */
+  .app.sidebar-expanded .session-item .meta { display: none !important; }
+
+  /* Show expanded card content */
+  .app.sidebar-expanded .session-item .expanded-card {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1;
+    padding: 14px 22px 18px;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .expanded-card { display: none; }
+
+  /* Ensure card children are visible in expanded mode */
+  .app.sidebar-expanded .session-item .card-stats,
+  .app.sidebar-expanded .session-item .card-info,
+  .app.sidebar-expanded .session-item .card-footer,
+  .app.sidebar-expanded .session-item .card-accent {
+    display: flex;
+    visibility: visible;
+  }
+  .app.sidebar-expanded .session-item .card-accent {
+    display: block;
+  }
+
+  /* Card accent stripe hidden in collapsed mode */
+  .session-item .card-accent { display: none; }
+
+  /* ── Stats pills ── */
+  .expanded-card .card-stats {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .expanded-card .card-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    border: none;
+    background: none;
+    padding: 0;
+  }
+
+  .expanded-card .card-pill svg {
+    width: 14px;
+    height: 14px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  .expanded-card .card-pill strong {
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  /* ── Info rows ── */
+  .expanded-card .card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+  }
+
+  .expanded-card .card-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    min-width: 0;
+  }
+
+  .expanded-card .card-info-row svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--accent);
+    opacity: 0.7;
+  }
+
+  .expanded-card .card-info-row .info-value {
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+
+  /* ── Card footer: badges + timestamp ── */
+  .expanded-card .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: auto;
+  }
+
+  .expanded-card .card-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .expanded-card .card-badges .ws-badge {
+    font-size: 11.5px;
+    padding: 3px 12px;
+    max-width: none;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  .expanded-card .card-created {
+    font-size: 11.5px;
+    color: var(--text-faint);
+    white-space: nowrap;
+    margin-left: auto;
   }
 
   .search-box input {
@@ -187,36 +422,149 @@
 
   .workspace-filters {
     padding: 0 14px 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+    position: relative;
   }
 
-  .ws-chip {
-    padding: 3px 10px;
-    border-radius: 12px;
+  .filter-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
     border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .filter-trigger:hover { border-color: var(--text-faint); }
+
+  .filter-trigger.open {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+
+  .filter-trigger svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--text-dim); }
+
+  .filter-trigger .filter-label { flex: 1; text-align: left; }
+
+  .filter-trigger .filter-chevron {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    transition: transform 0.15s ease;
+  }
+
+  .filter-trigger.open .filter-chevron { transform: rotate(180deg); }
+
+  .filter-menu {
+    position: absolute;
+    top: calc(100% - 4px);
+    left: 14px;
+    right: 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    z-index: 50;
+    max-height: 280px;
+    overflow-y: auto;
+    display: none;
+    padding: 4px;
+  }
+
+  .filter-menu.open { display: block; }
+
+  .filter-menu::-webkit-scrollbar { width: 4px; }
+  .filter-menu::-webkit-scrollbar-track { background: transparent; }
+  .filter-menu::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.1s ease;
+  }
+
+  .filter-option:hover { background: var(--bg-hover); }
+
+  .filter-option.active { color: var(--accent); }
+
+  .filter-option .check {
+    width: 14px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  .filter-option .filter-opt-label { flex: 1; }
+
+  .filter-option .filter-opt-count {
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  .filter-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 8px;
+  }
+
+  .filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: none;
     background: transparent;
     color: var(--text-dim);
     font-family: 'DM Sans', sans-serif;
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.1s ease;
+  }
+
+  .filter-toggle:hover { background: var(--bg-hover); }
+
+  .filter-toggle .toggle-check {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--accent);
     transition: all 0.15s ease;
-    white-space: nowrap;
   }
 
-  .ws-chip:hover { background: var(--bg-hover); color: var(--text-secondary); }
-
-  .ws-chip.active {
+  .filter-toggle .toggle-check.checked {
     background: var(--accent);
-    color: white;
     border-color: var(--accent);
-  }
-
-  .ws-chip .chip-count {
-    opacity: 0.7;
-    margin-left: 2px;
+    color: white;
   }
 
   .session-list {
@@ -288,6 +636,65 @@
     max-width: 120px;
   }
 
+  /* ── Hide session button ── */
+  .session-item {
+    position: relative;
+  }
+
+  .session-item .hide-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-faint);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.12s ease;
+    z-index: 2;
+  }
+
+  .session-item:hover .hide-btn { opacity: 1; }
+
+  .session-item .hide-btn:hover {
+    background: var(--bg-active);
+    color: var(--text-secondary);
+  }
+
+  .session-item .hide-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Expanded card hide button */
+  .app.sidebar-expanded .session-item .hide-btn {
+    top: 14px;
+    right: 14px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+  }
+
+  .app.sidebar-expanded .session-item .hide-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Hidden session styling (when showing hidden) */
+  .session-item.is-hidden {
+    opacity: 0.45;
+  }
+
+  .session-item.is-hidden:hover {
+    opacity: 0.7;
+  }
+
   .sidebar-footer {
     padding: 12px 14px;
     border-top: 1px solid var(--border);
@@ -295,6 +702,27 @@
     color: var(--text-faint);
     text-align: center;
     letter-spacing: 0.02em;
+  }
+
+  .sidebar-footer .hidden-toggle {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 2px;
+    transition: all 0.12s ease;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+  }
+
+  .sidebar-footer .hidden-toggle:hover {
+    color: var(--accent);
+    background: var(--accent-faint);
   }
 
   /* ── Main Content ── */
@@ -964,7 +1392,8 @@
         </svg>
       </div>
       <h1>Claude Sessions</h1>
-      <a href="/registry" style="font-size:13px;color:#8A7F74;text-decoration:none;padding:6px 10px;border-radius:6px;margin-left:12px;transition:all 0.15s" onmouseover="this.style.background='#EDE7DD';this.style.color='#1A1A1A'" onmouseout="this.style.background='';this.style.color='#8A7F74'">Registry</a>
+      <a href="/tools" style="font-size:13px;color:#8A7F74;text-decoration:none;padding:6px 10px;border-radius:6px;margin-left:12px;transition:all 0.15s" onmouseover="this.style.background='#EDE7DD';this.style.color='#1A1A1A'" onmouseout="this.style.background='';this.style.color='#8A7F74'">Tools</a>
+      <a href="/workshop" style="font-size:13px;color:#8A7F74;text-decoration:none;padding:6px 10px;border-radius:6px;transition:all 0.15s" onmouseover="this.style.background='#EDE7DD';this.style.color='#1A1A1A'" onmouseout="this.style.background='';this.style.color='#8A7F74'">Workshop <span style="font-size:8px;background:var(--bg-active);color:var(--text-dim);padding:1px 5px;border-radius:4px;margin-left:2px;vertical-align:middle">in progress</span></a>
     </div>
     <div class="topbar-nav">
       <button class="active" data-view="conversation">Sessions</button>
@@ -986,6 +1415,9 @@
   <div class="sidebar">
     <div class="search-box">
       <input type="text" id="search" placeholder="Search sessions..." autocomplete="off">
+      <button class="expand-toggle" id="expandToggle" onclick="toggleSidebarExpand()" title="Expand session list (&#8984;B)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>
     </div>
     <div class="workspace-filters" id="workspaceFilters"></div>
     <div class="session-list" id="sessionList"></div>
@@ -1032,15 +1464,12 @@
 <script>
 // ── Theme ──
 function getPreferredTheme() {
-  const stored = localStorage.getItem('dashboard-theme');
-  if (stored) return stored;
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('theme-icon').innerHTML = theme === 'dark' ? '&#9788;' : '&#9790;';
-  localStorage.setItem('dashboard-theme', theme);
 }
 
 function toggleTheme() {
@@ -1049,6 +1478,7 @@ function toggleTheme() {
 }
 
 applyTheme(getPreferredTheme());
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => applyTheme(e.matches ? 'dark' : 'light'));
 
 // ── State ──
 let allSessions = [];
@@ -1057,6 +1487,9 @@ let currentSessionId = null;
 let currentView = 'conversation';
 let activeWorkspace = null;  // null = show all
 let hideAutoTagged = true;   // hide Skill Planner sessions by default
+let sidebarExpanded = false;
+let showHidden = false;
+let hiddenSessionIds = new Set(JSON.parse(localStorage.getItem('hidden-sessions') || '[]'));
 
 // ── API ──
 const api = {
@@ -1128,7 +1561,6 @@ function shortProject(p) {
   if (!p) return '';
   const homeMatch = p.match(/^(\/Users\/[^/]+)/);
   if (homeMatch) return '~' + p.slice(homeMatch[1].length);
-  if (p.startsWith(home)) return '~' + p.slice(home.length);
   return p;
 }
 
@@ -1173,14 +1605,27 @@ function renderSessionList() {
   const list = document.getElementById('sessionList');
   const footer = document.getElementById('sidebarFooter');
 
-  const filtered = hideAutoTagged
+  let filtered = hideAutoTagged
     ? allSessions.filter(s => !s.autoTag)
     : allSessions;
-  const hiddenCount = allSessions.length - filtered.length;
+  const autoHiddenCount = allSessions.length - filtered.length;
 
-  list.innerHTML = filtered.map(s => `
-    <div class="session-item ${s.id === currentSessionId ? 'active' : ''}"
+  const userHiddenCount = filtered.filter(s => hiddenSessionIds.has(s.id)).length;
+  if (!showHidden) {
+    filtered = filtered.filter(s => !hiddenSessionIds.has(s.id));
+  }
+
+  const hideBtnSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+  const showBtnSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+  list.innerHTML = filtered.map(s => {
+    const isHidden = hiddenSessionIds.has(s.id);
+    const btnSvg = isHidden ? showBtnSvg : hideBtnSvg;
+    const btnTitle = isHidden ? 'Unhide session' : 'Hide session';
+    return `
+    <div class="session-item ${s.id === currentSessionId ? 'active' : ''} ${isHidden ? 'is-hidden' : ''}"
          data-id="${s.id}" onclick="selectSession('${s.id}')">
+      <button class="hide-btn" onclick="hideSession(event, '${s.id}')" title="${btnTitle}">${btnSvg}</button>
       <div class="name">${esc(s.name)}</div>
       <div class="meta">
         <span>${timeAgo(s.modified || s.created)}</span>
@@ -1189,13 +1634,73 @@ function renderSessionList() {
         ${s.workspace ? `<span class="dot"></span><span class="ws-badge">${esc(s.workspace)}</span>` : ''}
         ${s.autoTag ? `<span class="dot"></span><span class="ws-badge" style="background:#EDE7DD;color:var(--text-dim)">${esc(s.autoTag)}</span>` : ''}
       </div>
+      <div class="card-accent"></div>
+      <div class="expanded-card">
+        <div class="card-stats">
+          <span class="card-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <strong>${timeAgo(s.modified || s.created)}</strong>
+          </span>
+          <span class="card-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <strong>${s.messageCount}</strong> messages
+          </span>
+        </div>
+        ${s.projectPath || s.gitBranch ? `
+          <div class="card-info">
+            ${s.projectPath ? `
+              <div class="card-info-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span class="info-value">${shortProject(s.projectPath)}</span>
+              </div>
+            ` : ''}
+            ${s.gitBranch ? `
+              <div class="card-info-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                <span class="info-value">${esc(s.gitBranch)}</span>
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+        <div class="card-footer">
+          <div class="card-badges">
+            ${s.workspace ? `<span class="ws-badge">${esc(s.workspace)}</span>` : ''}
+            ${s.autoTag ? `<span class="ws-badge" style="background:var(--bg-hover);color:var(--text-dim)">${esc(s.autoTag)}</span>` : ''}
+          </div>
+          ${s.created ? `<span class="card-created">${formatTime(s.created)}</span>` : ''}
+        </div>
+      </div>
     </div>
-  `).join('');
+  `}).join('');
 
   let footerText = `${filtered.length} sessions`;
   if (activeWorkspace) footerText += ` in ${activeWorkspace}`;
-  if (hiddenCount > 0) footerText += ` (${hiddenCount} hidden)`;
-  footer.textContent = footerText;
+  if (autoHiddenCount > 0) footerText += ` (${autoHiddenCount} auto-hidden)`;
+  if (userHiddenCount > 0) {
+    footerText += showHidden
+      ? ` &middot; showing ${userHiddenCount} hidden`
+      : '';
+    footer.innerHTML = footerText +
+      ` &middot; <button class="hidden-toggle" onclick="toggleShowHidden()">${showHidden ? 'Hide' : 'Show'} ${userHiddenCount} hidden</button>`;
+  } else {
+    footer.textContent = footerText;
+  }
+}
+
+function hideSession(e, sessionId) {
+  e.stopPropagation();
+  if (hiddenSessionIds.has(sessionId)) {
+    hiddenSessionIds.delete(sessionId);
+  } else {
+    hiddenSessionIds.add(sessionId);
+  }
+  localStorage.setItem('hidden-sessions', JSON.stringify([...hiddenSessionIds]));
+  renderSessionList();
+}
+
+function toggleShowHidden() {
+  showHidden = !showHidden;
+  renderSessionList();
 }
 
 function toggleAutoTagged() {
@@ -1218,22 +1723,84 @@ function renderWorkspaceFilters() {
   }
 
   const autoTagCount = allSessions.filter(s => s.autoTag).length;
+  const triggerLabel = activeWorkspace ? esc(activeWorkspace) : 'All workspaces';
+  const isOpen = container.querySelector('.filter-menu.open') !== null;
 
-  container.innerHTML =
-    `<button class="ws-chip ${!activeWorkspace ? 'active' : ''}" onclick="filterWorkspace(null)">All</button>` +
-    allWorkspaces.map(ws => `
-      <button class="ws-chip ${activeWorkspace === ws.name ? 'active' : ''}"
-              onclick="filterWorkspace('${esc(ws.name)}')">
-        ${esc(ws.name)}<span class="chip-count">${ws.sessionCount}</span>
+  container.innerHTML = `
+    <button class="filter-trigger ${isOpen ? 'open' : ''}" onclick="toggleFilterDropdown(event)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span class="filter-label">${triggerLabel}</span>
+      <svg class="filter-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="filter-menu ${isOpen ? 'open' : ''}">
+      <button class="filter-option ${!activeWorkspace ? 'active' : ''}" onclick="filterWorkspace(null)">
+        <span class="check">${!activeWorkspace ? '&#10003;' : ''}</span>
+        <span class="filter-opt-label">All workspaces</span>
       </button>
-    `).join('') +
-    (autoTagCount > 0 ? `<button class="ws-chip ${hideAutoTagged ? '' : 'active'}" onclick="toggleAutoTagged()" style="margin-left:auto;${hideAutoTagged ? 'opacity:0.6' : ''}">${hideAutoTagged ? 'Show' : 'Hide'} Skill Planner<span class="chip-count">${autoTagCount}</span></button>` : '');
+      ${allWorkspaces.map(ws => `
+        <button class="filter-option ${activeWorkspace === ws.name ? 'active' : ''}" onclick="filterWorkspace('${esc(ws.name)}')">
+          <span class="check">${activeWorkspace === ws.name ? '&#10003;' : ''}</span>
+          <span class="filter-opt-label">${esc(ws.name)}</span>
+          <span class="filter-opt-count">${ws.sessionCount}</span>
+        </button>
+      `).join('')}
+      ${autoTagCount > 0 ? `
+        <div class="filter-divider"></div>
+        <button class="filter-toggle" onclick="toggleAutoTagged(); event.stopPropagation();">
+          <span class="toggle-check ${!hideAutoTagged ? 'checked' : ''}">${!hideAutoTagged ? '&#10003;' : ''}</span>
+          Show Skill Planner (${autoTagCount})
+        </button>
+      ` : ''}
+    </div>
+  `;
+}
+
+function toggleFilterDropdown(e) {
+  e.stopPropagation();
+  const trigger = e.currentTarget;
+  const menu = trigger.nextElementSibling;
+  const isOpen = menu.classList.contains('open');
+  if (isOpen) {
+    trigger.classList.remove('open');
+    menu.classList.remove('open');
+  } else {
+    trigger.classList.add('open');
+    menu.classList.add('open');
+  }
+}
+
+function closeFilterDropdown() {
+  const trigger = document.querySelector('.filter-trigger');
+  const menu = document.querySelector('.filter-menu');
+  if (trigger) trigger.classList.remove('open');
+  if (menu) menu.classList.remove('open');
 }
 
 function filterWorkspace(ws) {
   activeWorkspace = ws;
+  closeFilterDropdown();
   renderWorkspaceFilters();
   loadSessions(document.getElementById('search').value);
+}
+
+// Close filter dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.workspace-filters')) {
+    closeFilterDropdown();
+  }
+});
+
+function toggleSidebarExpand() {
+  sidebarExpanded = !sidebarExpanded;
+  const app = document.querySelector('.app');
+  const btn = document.getElementById('expandToggle');
+  app.classList.toggle('sidebar-expanded', sidebarExpanded);
+  btn.classList.toggle('active', sidebarExpanded);
+  // Update icon
+  btn.innerHTML = sidebarExpanded
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+  renderSessionList();
 }
 
 function esc(str) {
@@ -1243,6 +1810,15 @@ function esc(str) {
 
 // ── Conversation View ──
 async function selectSession(sessionId) {
+  // Auto-collapse expanded sidebar
+  if (sidebarExpanded) {
+    sidebarExpanded = false;
+    const app = document.querySelector('.app');
+    const btn = document.getElementById('expandToggle');
+    app.classList.remove('sidebar-expanded');
+    btn.classList.remove('active');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+  }
   currentSessionId = sessionId;
   renderSessionList();
 
@@ -1687,11 +2263,15 @@ async function resumeInTerminal(sessionId, projectPath) {
   });
 })();
 
-// ── Keyboard shortcut for terminal ──
+// ── Keyboard shortcuts ──
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === '`') {
     e.preventDefault();
     toggleTerminal();
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+    e.preventDefault();
+    toggleSidebarExpand();
   }
 });
 

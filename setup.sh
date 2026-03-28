@@ -6,7 +6,7 @@
 # browsing, searching, and resuming your Claude Code sessions.
 #
 # What it does:
-#   1. Copies dashboard files to ~/.claude/dashboard/
+#   1. Copies dashboard files to ~/.claude/claude-sessions-manager/
 #   2. Installs Python dependencies (fastapi, uvicorn, anthropic)
 #   3. Creates LaunchAgents so both servers start on login
 #   4. Starts the servers immediately
@@ -21,7 +21,7 @@
 
 set -e
 
-DASHBOARD_DIR="$HOME/.claude/dashboard"
+DASHBOARD_DIR="$HOME/.claude/claude-sessions-manager"
 LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
 PYTHON=$(command -v python3)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
