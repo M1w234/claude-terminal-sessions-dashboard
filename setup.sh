@@ -46,24 +46,32 @@ echo ""
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-$PYTHON -m pip install --quiet fastapi uvicorn anthropic 2>/dev/null || \
-$PYTHON -m pip install --quiet --user fastapi uvicorn anthropic
+$PYTHON -m pip install --quiet fastapi uvicorn anthropic httpx 2>/dev/null || \
+$PYTHON -m pip install --quiet --user fastapi uvicorn anthropic httpx
 
 # Create dashboard directory
 mkdir -p "$DASHBOARD_DIR"
 
 # Copy files
 echo "Copying dashboard files..."
-cp "$SCRIPT_DIR/server.py" "$DASHBOARD_DIR/"
-cp "$SCRIPT_DIR/terminal_server.py" "$DASHBOARD_DIR/"
-cp "$SCRIPT_DIR/index.html" "$DASHBOARD_DIR/"
+for f in server.py terminal_server.py index.html tools.html workshop.html tools.json tools-static.json ideas.json README.md; do
+    if [ -f "$SCRIPT_DIR/$f" ]; then
+        cp "$SCRIPT_DIR/$f" "$DASHBOARD_DIR/"
+    fi
+done
 
 # Create .gitignore
 cat > "$DASHBOARD_DIR/.gitignore" << 'GITIGNORE'
 __pycache__/
 *.pyc
 *.log
+config.json
 GITIGNORE
+
+# Initialize ideas.json if it doesn't exist (fresh installs)
+if [ ! -f "$DASHBOARD_DIR/ideas.json" ]; then
+    echo "[]" > "$DASHBOARD_DIR/ideas.json"
+fi
 
 # Create LaunchAgents
 echo "Setting up LaunchAgents..."
