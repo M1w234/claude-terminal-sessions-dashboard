@@ -4,10 +4,6 @@ A local web dashboard for browsing your Claude Code sessions and discovering you
 
 ![Dashboard](https://img.shields.io/badge/localhost-3456-C45A36) ![Terminal](https://img.shields.io/badge/terminal-3457-1a1a1a)
 
-![Sessions Dashboard](screenshots/sessions.png)
-
-![Tools Catalog](screenshots/tools.png)
-
 ## Quick Start
 
 Paste this into Claude Code:
@@ -17,6 +13,10 @@ Clone https://github.com/M1w234/claude-terminal-sessions-dashboard and run the s
 ```
 
 That's it. Claude Code handles the rest.
+
+![Sessions Dashboard](screenshots/sessions.png)
+
+![Tools Catalog](screenshots/tools.png)
 
 ## What You Get
 
