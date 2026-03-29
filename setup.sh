@@ -44,6 +44,19 @@ echo "Using Python: $PYTHON"
 echo "Dashboard dir: $DASHBOARD_DIR"
 echo ""
 
+# Clean up old installation (v1 used ~/.claude/dashboard/)
+OLD_DIR="$HOME/.claude/dashboard"
+if [ -d "$OLD_DIR" ] && [ "$OLD_DIR" != "$DASHBOARD_DIR" ]; then
+    echo "Found old installation at $OLD_DIR — migrating..."
+    launchctl unload "$LAUNCH_AGENTS_DIR/com.claude.dashboard.plist" 2>/dev/null || true
+    launchctl unload "$LAUNCH_AGENTS_DIR/com.claude.terminal.plist" 2>/dev/null || true
+    lsof -ti :3456 | xargs kill -9 2>/dev/null || true
+    lsof -ti :3457 | xargs kill -9 2>/dev/null || true
+    sleep 1
+    rm -rf "$OLD_DIR"
+    echo "Old installation removed."
+fi
+
 # Install Python dependencies
 echo "Installing Python dependencies..."
 $PYTHON -m pip install --quiet fastapi uvicorn anthropic httpx 2>/dev/null || \
