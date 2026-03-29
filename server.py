@@ -1711,23 +1711,24 @@ async def startup_reset_enrichments():
 
 
 DASHBOARD_DIR = Path(__file__).parent
+_NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
 @app.get("/")
 def serve_frontend():
-    return FileResponse(DASHBOARD_DIR / "index.html")
+    return FileResponse(DASHBOARD_DIR / "index.html", headers=_NO_CACHE)
 
 
 @app.get("/tools")
 def serve_tools():
-    return FileResponse(DASHBOARD_DIR / "tools.html")
+    return FileResponse(DASHBOARD_DIR / "tools.html", headers=_NO_CACHE)
 
 
 @app.get("/registry")
 def serve_registry_redirect():
     """Backwards-compatible alias."""
-    return FileResponse(DASHBOARD_DIR / "tools.html")
+    return FileResponse(DASHBOARD_DIR / "tools.html", headers=_NO_CACHE)
 
 
 @app.get("/workshop")
 def serve_workshop():
-    return FileResponse(DASHBOARD_DIR / "workshop.html")
+    return FileResponse(DASHBOARD_DIR / "workshop.html", headers=_NO_CACHE)
